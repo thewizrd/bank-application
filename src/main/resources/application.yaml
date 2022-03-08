@@ -1,0 +1,27 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    password: root
+    url: jdbc:mysql://localhost:3306/bankdb_team3
+    username: root
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+      naming:
+        physical-strategy: com.learning.banking.utils.CustomNamingStrategy
+    properties:
+      hibernate:
+        #dialect: org.hibernate.dialect.MySQL5Dialect
+        #dialect: org.hibernate.dialect.MySQL8Dialect
+    show-sql: true
+#server:
+#  port: 8081
+#  servlet:
+#    context-path: /api
+
+com:
+  learning:
+    banking:
+      jwtSecret: banking_team3 # used to generate the JWT Token
+      jwtExpirationMs: 86400000 # Validity duration for JWT Token # Decrease to 15min for bank
