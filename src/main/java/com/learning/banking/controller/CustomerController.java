@@ -2,6 +2,7 @@ package com.learning.banking.controller;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import javax.validation.Valid;
@@ -25,11 +26,14 @@ import com.learning.banking.entity.BeneficiaryStatus;
 import com.learning.banking.entity.Customer;
 import com.learning.banking.exceptions.NoRecordsFoundException;
 import com.learning.banking.payload.request.AddBeneficiaryRequest;
+import com.learning.banking.payload.request.ForgotSecurityRequest;
+import com.learning.banking.payload.request.ResetPasswordRequest;
 import com.learning.banking.payload.request.TransferRequest;
 import com.learning.banking.payload.response.AccountDetailsResponse;
 import com.learning.banking.payload.response.AddBeneficiaryResponse;
 import com.learning.banking.payload.response.ApiMessage;
 import com.learning.banking.payload.response.GetBeneficiariesResponse;
+import com.learning.banking.payload.response.GetCustomerQandAResponse;
 import com.learning.banking.service.AccountService;
 import com.learning.banking.service.CustomerService;
 
@@ -47,7 +51,7 @@ public class CustomerController {
 	private CustomerService customerService;
 	@Autowired
 	private AccountService accountService;
-	
+
 	/* TODO: password encoder */
 
 	@GetMapping("/{customerID}/account/{accountID}")
@@ -131,11 +135,11 @@ public class CustomerController {
 		Customer customer = customerService.getCustomerByID(customerID).orElseThrow(() -> {
 			return new NoRecordsFoundException("Customer with ID: " + customerID + " not found");
 		});
-		
+
 		boolean removed = customer.getBeneficiaries().removeIf(b -> {
 			return b.getBeneficiaryID() == beneficiaryID;
 		});
-		
+
 		if (removed) {
 			customer = customerService.updateCustomer(customer);
 			return ResponseEntity.ok(new ApiMessage("Beneficiary deleted successfully"));
@@ -144,10 +148,40 @@ public class CustomerController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiMessage("Unable to remove beneficiary"));
 		}
 	}
-	
+
 	@PutMapping("/transfer")
 	public ResponseEntity<?> accountTransferByCustomer(@Valid @RequestBody TransferRequest request) {
 		/* TODO: Determine flow */
 		return null;
+	}
+
+	@GetMapping("/{username}/forgot/question/answer")
+	public ResponseEntity<?> getCustomerSecurityQandA(@PathVariable String username) throws NoRecordsFoundException {
+		// Check if customer exists in database
+		Customer customer = customerService.getCustomerByUsername(username).orElseThrow(() -> {
+			return new NoRecordsFoundException("Customer with username: " + username + " not found");
+		});
+		
+		return ResponseEntity.ok(new GetCustomerQandAResponse(customer.getSecretQuestion(), customer.getSecretAnswer()));
+	}
+	
+	@PutMapping("/{username}/forgot")
+	public ResponseEntity<?> updateForgottenPassword(@PathVariable String username, @Valid @RequestBody ResetPasswordRequest request) throws NoRecordsFoundException {
+		// Check if customer exists in database
+		Customer customer = customerService.getCustomerByUsername(username).orElseThrow(() -> {
+			return new NoRecordsFoundException("Customer with username: " + username + " not found");
+		});
+		
+		// Check if passwords match
+		if (!Objects.equals(request.getPassword(), request.getConfirmPassword())) {
+			// Passwords don't match
+			return ResponseEntity.badRequest().body(new ApiMessage("Sorry password not updated"));
+		} else {
+			// Passwords match update accordingly
+			customer.setPassword(request.getPassword()); // TODO: encode password
+			customerService.updateCustomer(customer);
+			
+			return ResponseEntity.ok(new ApiMessage("Password updated successfully"));
+		}
 	}
 }
