@@ -25,3 +25,7 @@ com:
     banking:
       jwtSecret: banking_team3 # used to generate the JWT Token
       jwtExpirationMs: 86400000 # Validity duration for JWT Token # Decrease to 15min for bank
+      
+server:
+  error:
+    include-message: always
