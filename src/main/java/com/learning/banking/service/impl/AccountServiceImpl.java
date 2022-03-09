@@ -1,5 +1,6 @@
 package com.learning.banking.service.impl;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,5 +24,10 @@ public class AccountServiceImpl implements AccountService {
 	@Override
 	public Optional<Account> getAccountByAccountNumber(long accountNumber) {
 		return repo.findById(accountNumber);
+	}
+
+	@Override
+	public List<Account> updateAccounts(Iterable<Account> accounts) {
+		return repo.saveAll(accounts);
 	}
 }

@@ -1,6 +1,9 @@
 package com.learning.banking.controller;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -24,9 +27,11 @@ import com.learning.banking.entity.Account;
 import com.learning.banking.entity.Beneficiary;
 import com.learning.banking.entity.BeneficiaryStatus;
 import com.learning.banking.entity.Customer;
+import com.learning.banking.entity.Transaction;
+import com.learning.banking.entity.TransactionType;
+import com.learning.banking.exceptions.InsufficientFundsException;
 import com.learning.banking.exceptions.NoRecordsFoundException;
 import com.learning.banking.payload.request.AddBeneficiaryRequest;
-import com.learning.banking.payload.request.ForgotSecurityRequest;
 import com.learning.banking.payload.request.ResetPasswordRequest;
 import com.learning.banking.payload.request.TransferRequest;
 import com.learning.banking.payload.response.AccountDetailsResponse;
@@ -34,6 +39,7 @@ import com.learning.banking.payload.response.AddBeneficiaryResponse;
 import com.learning.banking.payload.response.ApiMessage;
 import com.learning.banking.payload.response.GetBeneficiariesResponse;
 import com.learning.banking.payload.response.GetCustomerQandAResponse;
+import com.learning.banking.payload.response.TransferResponse;
 import com.learning.banking.service.AccountService;
 import com.learning.banking.service.CustomerService;
 
@@ -150,9 +156,78 @@ public class CustomerController {
 	}
 
 	@PutMapping("/transfer")
-	public ResponseEntity<?> accountTransferByCustomer(@Valid @RequestBody TransferRequest request) {
-		/* TODO: Determine flow */
-		return null;
+	public ResponseEntity<?> accountTransferByCustomer(@Valid @RequestBody TransferRequest request) throws NoRecordsFoundException, InsufficientFundsException {
+		/*
+		 * Transfer flow
+		 * 
+		 * 1. Retrieve Accounts matching account numbers (fromAccount and toAccount)
+		 * 1a. Throw exception if accounts can't be found
+		 * 2. Retrieve Customer object who initiated request (using by [ID] from request)
+		 * 3. Check if account (fromAccount) has enough funds to deduct from
+		 * 3a. If funds not available throw exception (InsufficientFundsException?)
+		 * 4. Deduct amount from "fromAccount" and add to "toAccount"
+		 * 5. Create 2 separate Transaction entries and add to both accounts
+		 * 6. Save both entities using @Transaction
+		 * 7. Return payload
+		 */
+		
+		// 1. Retrieve accounts
+		final Account fromAccount = accountService.getAccountByAccountNumber(request.getFromAccNumber()).orElseThrow(() -> {
+			return new NoRecordsFoundException("Account number: " + request.getFromAccNumber() + " cannot be found");
+		});
+		final Account toAccount = accountService.getAccountByAccountNumber(request.getToAccNumber()).orElseThrow(() -> {
+			return new NoRecordsFoundException("Account number: " + request.getToAccNumber() + " cannot be found");
+		});
+		
+		// 2. Retrieve initiating customer
+		final Customer initiatedBy = customerService.getCustomerByID(request.getBy()).orElseThrow(() -> {
+			return new NoRecordsFoundException("Customer with ID: " + request.getBy() + " not found");
+		});
+		
+		// 3. Validate funds
+		if (fromAccount.getAccountBalance().subtract(request.getAmount()).compareTo(BigDecimal.ZERO) < 0) {
+			// Amount is negative after subtraction; account has insufficient funds
+			throw new InsufficientFundsException(String.format("Account number: %d does not have sufficient funds to process transfer" , request.getFromAccNumber()));
+		} else {
+			// 4. Deduct amount
+			fromAccount.setAccountBalance(fromAccount.getAccountBalance().subtract(request.getAmount()));
+			// 4a. Add amount
+			toAccount.setAccountBalance(toAccount.getAccountBalance().add(request.getAmount()));
+		}
+		
+		final LocalDateTime now = LocalDateTime.now();
+
+		// 5. Create Transaction objects
+		Transaction fromTransaction = new Transaction();
+		fromTransaction.setDate(now);
+		fromTransaction.setReference(request.getReason());
+		fromTransaction.setAmount(request.getAmount());
+		fromTransaction.setTransactionType(TransactionType.DEBIT); // TODO: add to request?
+		fromTransaction.setInitiatedBy(initiatedBy);
+		// 5a. Add to list
+		fromAccount.getTransactions().add(fromTransaction);
+
+		Transaction toTransaction = new Transaction();
+		toTransaction.setDate(now);
+		toTransaction.setReference(request.getReason());
+		toTransaction.setAmount(request.getAmount());
+		toTransaction.setTransactionType(TransactionType.DEBIT); // TODO: add to request?
+		toTransaction.setInitiatedBy(initiatedBy);
+		// 5a. Add to list
+		toAccount.getTransactions().add(toTransaction);
+		
+		// 6. Save entities
+		accountService.updateAccounts(Arrays.asList(fromAccount, toAccount));
+
+		// 7. Return payload
+		TransferResponse response = new TransferResponse();
+		response.setFromAccNumber(request.getFromAccNumber());
+		response.setToAccNumber(request.getToAccNumber());
+		response.setAmount(request.getAmount());
+		response.setReason(request.getReason());
+		response.setBy(request.getBy());
+		
+		return ResponseEntity.ok(response);
 	}
 
 	@GetMapping("/{username}/forgot/question/answer")
