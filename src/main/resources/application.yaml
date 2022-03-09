@@ -7,7 +7,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create-drop
       naming:
         physical-strategy: com.learning.banking.utils.CustomNamingStrategy
     properties:
