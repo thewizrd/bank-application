@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,7 +24,9 @@ import com.learning.banking.entity.CustomerStatus;
 import com.learning.banking.entity.Role;
 import com.learning.banking.entity.UserRoles;
 import com.learning.banking.payload.response.StaffGetCustomersResponse;
+import com.learning.banking.payload.response.TestCustomerResponse;
 import com.learning.banking.repo.CustomerRepository;
+import com.learning.banking.repo.RoleRepository;
 
 /**
  * TestController
@@ -36,6 +39,20 @@ import com.learning.banking.repo.CustomerRepository;
 public class TestController {
 	@Autowired
 	private CustomerRepository customerRepo;
+	@Autowired
+	private RoleRepository roleRepo;
+	
+	@PutMapping("/addRoles")
+	public ResponseEntity<?> addRoles() {
+		// Add roles
+		for (UserRoles role : UserRoles.values()) {
+			roleRepo.save(new Role(role));
+		}
+		
+		List<Role> roles = roleRepo.findAll();
+		
+		return ResponseEntity.ok(roles);
+	}
 	
 	@PutMapping("/addStuff")
 	public ResponseEntity<?> addStuff() {
@@ -45,7 +62,7 @@ public class TestController {
 		customer1.setLastName("Antoine");
 		customer1.setUsername("dave");
 		customer1.setPassword("password");
-		customer1.getRoles().add(new Role(UserRoles.CUSTOMER));
+		customer1.getRoles().add(roleRepo.getRoleByRoleName(UserRoles.CUSTOMER));
 		customer1.setSecretQuestion("What's your favorite color?");
 		customer1.setSecretAnswer("Blue");
 		customer1.setPhone("111-111-1111");
@@ -68,7 +85,7 @@ public class TestController {
 		customer2.setLastName("Z");
 		customer2.setUsername("steve");
 		customer2.setPassword("password");
-		customer2.getRoles().add(new Role(UserRoles.CUSTOMER));
+		customer2.getRoles().add(roleRepo.getRoleByRoleName(UserRoles.CUSTOMER));
 		customer2.setSecretQuestion("What's your favorite color?");
 		customer2.setSecretAnswer("Red");
 		customer2.setPhone("222-222-2222");
@@ -81,7 +98,7 @@ public class TestController {
 		account2.setAccountBalance(new BigDecimal("100000.00"));
 		account2.setDateOfCreation(LocalDateTime.now());
 		account2.setAccountStatus(AccountStatus.ENABLED);
-		account1.setCustomer(customer2);
+		account2.setCustomer(customer2);
 		
 		customer2.getAccounts().add(account2);
 		
@@ -105,5 +122,13 @@ public class TestController {
 		}).collect(Collectors.toList());
 		
 		return ResponseEntity.ok(responseBody);
+	}
+	
+	@GetMapping("/customers")
+	public ResponseEntity<?> getCustomers() {
+		List<Customer> customers = customerRepo.findAll();
+		return ResponseEntity.ok(customers.stream().map(c -> {
+			return new TestCustomerResponse(c);
+		}).collect(Collectors.toList()));
 	}
 }
