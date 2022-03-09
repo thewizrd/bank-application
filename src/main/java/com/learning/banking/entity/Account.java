@@ -19,8 +19,11 @@ import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
@@ -33,7 +36,8 @@ import lombok.ToString;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = { "transactions" })
+@EqualsAndHashCode(exclude  = { "transactions", "customer", "approvedBy" })
+@ToString(exclude  = { "customer", "approvedBy" })
 @Entity
 @Table
 public class Account {
@@ -55,8 +59,10 @@ public class Account {
 	private List<Transaction> transactions = new ArrayList<>();
 	
 	@ManyToOne(optional = false)
+	@JsonIgnore
 	private Customer customer; // M:1 - account owned by single customer
 	
 	@OneToOne
+	@JsonIgnore
 	private Customer approvedBy; // approved by staff
 }

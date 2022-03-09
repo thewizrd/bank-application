@@ -20,6 +20,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 /**
  * Roles
@@ -31,6 +32,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(exclude = "customers")
+@ToString(exclude = "customers")
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = "roleName"))
 public class Role {

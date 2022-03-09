@@ -14,7 +14,9 @@ import javax.persistence.Table;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 /**
  * Transaction
@@ -25,6 +27,8 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(exclude = { "initiatedBy" })
+@ToString(exclude = { "initiatedBy" })
 @Entity
 @Table
 public class Transaction {

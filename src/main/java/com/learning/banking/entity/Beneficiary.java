@@ -12,9 +12,13 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 /**
  * Beneficiary
@@ -25,6 +29,8 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = { "account", "beneficiaryOf", "approvedBy" })
+@EqualsAndHashCode(exclude = { "account", "beneficiaryOf", "approvedBy" })
 @Entity
 @Table
 public class Beneficiary {
@@ -33,9 +39,11 @@ public class Beneficiary {
 	private long beneficiaryID;
 	
 	@OneToOne
+	@JsonIgnore
 	private Account account; // account belonging to the beneficiary
 	
 	@ManyToOne
+	@JsonIgnore
 	private Customer beneficiaryOf; // customer - beneficiary relationship
 
 	private LocalDate addedDate;
@@ -46,6 +54,7 @@ public class Beneficiary {
 	private BeneficiaryStatus active;
 	
 	@OneToOne
+	@JsonIgnore
 	private Customer approvedBy; // staff which approved
 	
 	public Beneficiary(Account account, Customer beneficiaryOf) {
