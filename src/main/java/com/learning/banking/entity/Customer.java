@@ -21,6 +21,7 @@ import javax.persistence.UniqueConstraint;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
@@ -33,7 +34,7 @@ import lombok.ToString;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = { "accounts", "roles", "beneficiaries" })
+@EqualsAndHashCode(exclude  = { "accounts", "roles", "beneficiaries" })
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = "username"))
 // Look at inheritance mapping (Staff, Customers)??
@@ -70,10 +71,10 @@ public class Customer {
 	@Enumerated(EnumType.STRING)
 	private CustomerStatus status = CustomerStatus.ENABLED;
 	
-	@OneToMany(mappedBy = "customer", cascade = CascadeType.ALL/*, orphanRemoval = true*/)
+	@OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
 	private Set<Account> accounts = new HashSet<>(); // 1:N - customer can have multiple accounts
 	
-	@OneToMany(mappedBy = "beneficiaryOf", cascade = CascadeType.ALL)
+	@OneToMany(mappedBy = "beneficiaryOf", cascade = CascadeType.ALL, orphanRemoval = true)
 	/*
 	@ManyToMany
 	@JoinTable(
