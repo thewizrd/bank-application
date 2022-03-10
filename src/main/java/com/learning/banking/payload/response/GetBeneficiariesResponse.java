@@ -1,7 +1,7 @@
 package com.learning.banking.payload.response;
 
 import com.learning.banking.entity.Beneficiary;
-import com.learning.banking.entity.BeneficiaryStatus;
+import com.learning.banking.enums.BeneficiaryStatus;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

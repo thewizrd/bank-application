@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.learning.banking.entity.Account;
-import com.learning.banking.entity.AccountStatus;
-import com.learning.banking.entity.AccountType;
+import com.learning.banking.enums.AccountStatus;
+import com.learning.banking.enums.AccountType;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

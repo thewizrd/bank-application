@@ -1,7 +1,7 @@
 package com.learning.banking.payload.response;
 
-import com.learning.banking.entity.AccountType;
 import com.learning.banking.entity.Beneficiary;
+import com.learning.banking.enums.AccountType;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

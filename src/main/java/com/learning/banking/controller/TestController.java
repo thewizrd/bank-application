@@ -15,14 +15,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.learning.banking.entity.Account;
-import com.learning.banking.entity.AccountStatus;
-import com.learning.banking.entity.AccountType;
 import com.learning.banking.entity.Beneficiary;
-import com.learning.banking.entity.BeneficiaryStatus;
 import com.learning.banking.entity.Customer;
-import com.learning.banking.entity.CustomerStatus;
 import com.learning.banking.entity.Role;
-import com.learning.banking.entity.UserRoles;
+import com.learning.banking.enums.AccountStatus;
+import com.learning.banking.enums.AccountType;
+import com.learning.banking.enums.BeneficiaryStatus;
+import com.learning.banking.enums.CustomerStatus;
+import com.learning.banking.enums.UserRoles;
 import com.learning.banking.payload.response.StaffGetCustomersResponse;
 import com.learning.banking.payload.response.TestCustomerResponse;
 import com.learning.banking.repo.CustomerRepository;
@@ -62,7 +62,7 @@ public class TestController {
 		customer1.setLastName("Antoine");
 		customer1.setUsername("dave");
 		customer1.setPassword("password");
-		customer1.getRoles().add(roleRepo.getRoleByRoleName(UserRoles.CUSTOMER));
+		customer1.getRoles().add(roleRepo.getRoleByRoleName(UserRoles.ROLE_CUSTOMER));
 		customer1.setSecretQuestion("What's your favorite color?");
 		customer1.setSecretAnswer("Blue");
 		customer1.setPhone("111-111-1111");
@@ -85,7 +85,7 @@ public class TestController {
 		customer2.setLastName("Z");
 		customer2.setUsername("steve");
 		customer2.setPassword("password");
-		customer2.getRoles().add(roleRepo.getRoleByRoleName(UserRoles.CUSTOMER));
+		customer2.getRoles().add(roleRepo.getRoleByRoleName(UserRoles.ROLE_CUSTOMER));
 		customer2.setSecretQuestion("What's your favorite color?");
 		customer2.setSecretAnswer("Red");
 		customer2.setPhone("222-222-2222");

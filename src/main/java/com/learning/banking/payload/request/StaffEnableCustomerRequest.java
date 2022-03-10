@@ -5,7 +5,7 @@ import javax.validation.constraints.Positive;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonFormat.Feature;
-import com.learning.banking.entity.CustomerStatus;
+import com.learning.banking.enums.CustomerStatus;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

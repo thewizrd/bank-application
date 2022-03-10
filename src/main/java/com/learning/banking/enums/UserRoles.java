@@ -1,4 +1,4 @@
-package com.learning.banking.entity;
+package com.learning.banking.enums;
 
 /**
  * UserRoles
@@ -7,7 +7,7 @@ package com.learning.banking.entity;
  * @date Mar 4, 2022-4:04:19 PM
  */
 public enum UserRoles {
-	CUSTOMER,
-	STAFF,
-	ADMIN
+	ROLE_ADMIN,
+	ROLE_STAFF,
+	ROLE_CUSTOMER
 }

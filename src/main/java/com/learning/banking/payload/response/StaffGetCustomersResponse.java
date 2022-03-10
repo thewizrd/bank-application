@@ -3,7 +3,7 @@ package com.learning.banking.payload.response;
 import java.time.LocalDate;
 
 import com.learning.banking.entity.Customer;
-import com.learning.banking.entity.CustomerStatus;
+import com.learning.banking.enums.CustomerStatus;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

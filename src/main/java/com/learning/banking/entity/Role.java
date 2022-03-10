@@ -15,6 +15,7 @@ import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.learning.banking.enums.UserRoles;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

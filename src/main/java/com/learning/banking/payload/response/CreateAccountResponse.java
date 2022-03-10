@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.learning.banking.entity.Account;
-import com.learning.banking.entity.AccountType;
+import com.learning.banking.enums.AccountType;
 
 import lombok.Data;
 

@@ -1,4 +1,4 @@
-package com.learning.banking.entity;
+package com.learning.banking.enums;
 
 /**
  * BeneficiaryStatus

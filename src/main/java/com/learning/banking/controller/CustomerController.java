@@ -25,10 +25,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.learning.banking.entity.Account;
 import com.learning.banking.entity.Beneficiary;
-import com.learning.banking.entity.BeneficiaryStatus;
 import com.learning.banking.entity.Customer;
 import com.learning.banking.entity.Transaction;
-import com.learning.banking.entity.TransactionType;
+import com.learning.banking.enums.BeneficiaryStatus;
+import com.learning.banking.enums.TransactionType;
 import com.learning.banking.exceptions.InsufficientFundsException;
 import com.learning.banking.exceptions.NoRecordsFoundException;
 import com.learning.banking.payload.request.AddBeneficiaryRequest;

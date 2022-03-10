@@ -11,8 +11,8 @@ import javax.persistence.Enumerated;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonFormat.Shape;
 import com.learning.banking.entity.Customer;
-import com.learning.banking.entity.CustomerStatus;
 import com.learning.banking.entity.Role;
+import com.learning.banking.enums.CustomerStatus;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

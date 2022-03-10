@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonFormat.Shape;
 import com.learning.banking.entity.Transaction;
-import com.learning.banking.entity.TransactionType;
+import com.learning.banking.enums.TransactionType;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
