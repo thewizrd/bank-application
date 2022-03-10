@@ -39,7 +39,8 @@ import lombok.ToString;
 @EqualsAndHashCode(exclude  = { "accounts", "roles", "beneficiaries" })
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = "username"))
-// Look at inheritance mapping (Staff, Customers)??
+// TODO: Maybe have base class as User
+// and have Staff/Admin & Customer extend class (inheritance mapping)
 public class Customer {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

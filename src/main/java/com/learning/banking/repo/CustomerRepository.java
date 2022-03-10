@@ -19,7 +19,7 @@ import com.learning.banking.entity.Customer;
  */
 @Repository
 public interface CustomerRepository extends JpaRepository<Customer, Long> {
-	@Transactional
+	@Transactional // Transactional: avoids LazyInitException
 	@Override
 	<S extends Customer> S save(S entity);
 	

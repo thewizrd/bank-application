@@ -12,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  * @date Mar 9, 2022-5:28:11 PM
  */
 @Configuration
+/* NOTE: Just for testing; this will be replaced */
 public class PasswordEncoderConfig {
 	@Bean
 	public PasswordEncoder passwordEncoder() {
