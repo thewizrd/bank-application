@@ -84,6 +84,8 @@ public class StaffController {
 	@PreAuthorize("hasRole('STAFF')")
 	public ResponseEntity<?> changeCustomerStatus(@Valid @RequestBody CustomerRequest customerRequest) {
 
+		//new comment
+		
 		// customer should be able to login
 		Long customerId = customerRequest.getCustomerId();
 		if (customerService.existsByID(customerId)) {
