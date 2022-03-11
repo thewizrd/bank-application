@@ -57,6 +57,7 @@ import com.learning.banking.payload.request.CreateUserRequest;
 import com.learning.banking.payload.request.ResetPasswordRequest;
 import com.learning.banking.payload.request.SignInRequest;
 import com.learning.banking.payload.request.TransferRequest;
+import com.learning.banking.payload.request.UpdateCustomerRequest;
 import com.learning.banking.payload.response.AccountDetailsResponse;
 import com.learning.banking.payload.response.AddBeneficiaryResponse;
 import com.learning.banking.payload.response.AllAccountsResponse;
@@ -201,6 +202,38 @@ public class CustomerController {
 		CreateAccountResponse response = new CreateAccountResponse(newAccount);
 		
 		return ResponseEntity.status(200).body(response);
+	}
+	
+	// 6
+	@GetMapping("/{customerID}")
+	public ResponseEntity<?> getCustomerByID(@PathVariable Long customerID) throws NoRecordsFoundException {
+		// Check if customer exists in database
+		Customer customer = customerService.getCustomerByID(customerID).orElseThrow(() -> {
+			return new NoRecordsFoundException("Customer with ID: " + customerID + " not found");
+		});
+		
+		return ResponseEntity.ok(new CustomerResponse(customer));
+	}
+	
+	// 7
+	@PreAuthorize("hasRole('CUSTOMER')")
+	@PutMapping("/{customerID}")
+	public ResponseEntity<?> updateCustomerByID(@PathVariable Long customerID, @Valid @RequestBody UpdateCustomerRequest request) throws NoRecordsFoundException {
+		// Check if customer exists in database
+		Customer customer = customerService.getCustomerByID(customerID).orElseThrow(() -> {
+			return new NoRecordsFoundException("Customer with ID: " + customerID + " not found");
+		});
+		
+		customer.setFullName(request.getFirstName(), request.getLastName());
+		customer.setPhone(request.getPhone());
+		customer.setPan(request.getPan());
+		customer.setAadhar(request.getAadhar());
+		customer.setSecretQuestion(request.getSecretQuestion());
+		customer.setSecretAnswer(request.getSecretAnswer());
+		
+		Customer updated = customerService.updateCustomer(customer);
+		
+		return ResponseEntity.ok(new CustomerResponse(updated));
 	}
 
 	// 8
