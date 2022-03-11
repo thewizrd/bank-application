@@ -30,4 +30,14 @@ public class AccountServiceImpl implements AccountService {
 	public List<Account> updateAccounts(Iterable<Account> accounts) {
 		return repo.saveAll(accounts);
 	}
+
+	@Override
+	public boolean existsByAccountNumber(Long accountNumber) {
+		return repo.existsByAccountNumber(accountNumber);
+	}
+
+	@Override
+	public Optional<Account> findAccountByAccountNumber(Long accountNumber) {
+		return repo.findAccountByAccountNumber(accountNumber);
+	}
 }

@@ -9,6 +9,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
@@ -42,6 +43,9 @@ public class Transaction {
 	private BigDecimal amount;
 	@Enumerated(EnumType.STRING)
 	private TransactionType transactionType;
+	
+	@ManyToOne
+	private Account account;
 	
 	@OneToOne
 	private Customer initiatedBy; // add customer who initiated transaction

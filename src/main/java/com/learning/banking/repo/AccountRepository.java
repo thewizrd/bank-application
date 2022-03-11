@@ -1,6 +1,7 @@
 package com.learning.banking.repo;
 
 import java.util.List;
+import java.util.Optional;
 
 import javax.transaction.Transactional;
 
@@ -22,4 +23,8 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 	@Transactional // Transactional: avoids LazyInitException
 	@Override
 	<S extends Account> List<S> saveAll(Iterable<S> entities);
+	
+	boolean existsByAccountNumber(Long accountNumber);
+
+	Optional<Account> findAccountByAccountNumber(Long accountNumber);
 }

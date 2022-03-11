@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class StaffApproveBeneficiaryRequest {
+public class BeneficiaryRequest {
 	@Positive
 	@NotNull
 	private Long fromCustomerAccNo;

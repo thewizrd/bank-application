@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.learning.banking.entity.Customer;
+import com.learning.banking.enums.UserRoles;
 import com.learning.banking.exceptions.NoRecordsFoundException;
 
 /**
@@ -21,4 +22,6 @@ public interface CustomerService {
 	Customer updateCustomer(Customer customer) throws NoRecordsFoundException;
 	boolean existsByID(long id);
 	boolean existsByUsername(String username);
+	
+	List<Customer> findCustomersByrolesRoleName(UserRoles roleName);
 }

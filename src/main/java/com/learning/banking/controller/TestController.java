@@ -62,7 +62,7 @@ public class TestController {
 		customer1.setLastName("Antoine");
 		customer1.setUsername("dave");
 		customer1.setPassword("password");
-		customer1.getRoles().add(roleRepo.getRoleByRoleName(UserRoles.ROLE_CUSTOMER));
+		customer1.getRoles().add(roleRepo.getByRoleName(UserRoles.ROLE_CUSTOMER));
 		customer1.setSecretQuestion("What's your favorite color?");
 		customer1.setSecretAnswer("Blue");
 		customer1.setPhone("111-111-1111");
@@ -85,7 +85,7 @@ public class TestController {
 		customer2.setLastName("Z");
 		customer2.setUsername("steve");
 		customer2.setPassword("password");
-		customer2.getRoles().add(roleRepo.getRoleByRoleName(UserRoles.ROLE_CUSTOMER));
+		customer2.getRoles().add(roleRepo.getByRoleName(UserRoles.ROLE_CUSTOMER));
 		customer2.setSecretQuestion("What's your favorite color?");
 		customer2.setSecretAnswer("Red");
 		customer2.setPhone("222-222-2222");

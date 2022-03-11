@@ -1,24 +1,27 @@
 package com.learning.banking.payload.request;
 
+import java.util.Set;
+
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
-/**
- * CustomerRegistration
- *
- * @author bryan
- * @date Mar 4, 2022-5:14:02 PM
- */
 @Data
-public class CustomerRegistrationRequest {
+@AllArgsConstructor
+@NoArgsConstructor
+public class CreateUserRequest {
 	@NotBlank
 	private String username;
 	@NotBlank
 	private String firstName;
-	@NotBlank
-	private String lastName;
 	
 	@NotBlank
+	private String lastName;
+	@NotBlank
 	private String password;
+	
+	private Set<String> roles;
 }

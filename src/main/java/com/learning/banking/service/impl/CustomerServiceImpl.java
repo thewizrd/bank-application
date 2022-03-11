@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.learning.banking.entity.Customer;
+import com.learning.banking.enums.UserRoles;
 import com.learning.banking.exceptions.NoRecordsFoundException;
 import com.learning.banking.repo.CustomerRepository;
 import com.learning.banking.service.CustomerService;
@@ -67,5 +68,10 @@ public class CustomerServiceImpl implements CustomerService {
 	@Override
 	public boolean existsByUsername(String username) {
 		return repo.existsByUsername(username);
+	}
+
+	@Override
+	public List<Customer> findCustomersByrolesRoleName(UserRoles roleName) {
+		return repo.findCustomersByrolesRoleName(roleName);
 	}
 }

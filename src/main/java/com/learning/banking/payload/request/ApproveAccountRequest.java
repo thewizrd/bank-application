@@ -12,7 +12,7 @@ import lombok.Data;
  * @date Mar 4, 2022-5:28:29 PM
  */
 @Data
-public class StaffApproveAccountRequest {
+public class ApproveAccountRequest {
 	@Positive
 	@NotNull
 	private Long accountNumber;

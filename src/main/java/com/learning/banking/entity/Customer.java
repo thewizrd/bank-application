@@ -92,4 +92,9 @@ public class Customer {
 	public String getFullName() {
 		return String.format("%s %s", firstName, lastName);
 	}
+	
+	public void setFullName(String fname,String lname) {
+		this.firstName = fname;
+		this.lastName = lname;
+	} 
 }

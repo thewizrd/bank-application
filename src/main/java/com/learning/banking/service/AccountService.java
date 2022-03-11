@@ -14,4 +14,7 @@ import com.learning.banking.entity.Account;
 public interface AccountService {
 	Optional<Account> getAccountByAccountNumber(long accountNumber);
 	List<Account> updateAccounts(Iterable<Account> accounts);
+	
+	boolean existsByAccountNumber(Long accountNumber);
+	Optional<Account> findAccountByAccountNumber(Long accountNumber);
 }

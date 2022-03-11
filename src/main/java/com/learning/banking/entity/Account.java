@@ -57,7 +57,7 @@ public class Account {
 	@Enumerated(EnumType.STRING)
 	private AccountStatus accountStatus;
 	
-	@OneToMany(/*mappedBy = "account", */cascade = CascadeType.ALL)
+	@OneToMany(mappedBy = "account", cascade = CascadeType.ALL)
 	private List<Transaction> transactions = new ArrayList<>();
 	
 	@ManyToOne(optional = false)

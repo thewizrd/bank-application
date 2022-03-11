@@ -4,8 +4,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.validation.Valid;
@@ -13,6 +15,7 @@ import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,22 +29,28 @@ import org.springframework.web.bind.annotation.RestController;
 import com.learning.banking.entity.Account;
 import com.learning.banking.entity.Beneficiary;
 import com.learning.banking.entity.Customer;
+import com.learning.banking.entity.Role;
 import com.learning.banking.entity.Transaction;
 import com.learning.banking.enums.BeneficiaryStatus;
 import com.learning.banking.enums.TransactionType;
+import com.learning.banking.enums.UserRoles;
+import com.learning.banking.exceptions.IdNotFoundException;
 import com.learning.banking.exceptions.InsufficientFundsException;
 import com.learning.banking.exceptions.NoRecordsFoundException;
 import com.learning.banking.payload.request.AddBeneficiaryRequest;
+import com.learning.banking.payload.request.CreateUserRequest;
 import com.learning.banking.payload.request.ResetPasswordRequest;
 import com.learning.banking.payload.request.TransferRequest;
 import com.learning.banking.payload.response.AccountDetailsResponse;
 import com.learning.banking.payload.response.AddBeneficiaryResponse;
 import com.learning.banking.payload.response.ApiMessage;
-import com.learning.banking.payload.response.GetBeneficiariesResponse;
+import com.learning.banking.payload.response.BeneficiaryResponse;
+import com.learning.banking.payload.response.CustomerResponse;
 import com.learning.banking.payload.response.GetCustomerQandAResponse;
 import com.learning.banking.payload.response.TransferResponse;
 import com.learning.banking.service.AccountService;
 import com.learning.banking.service.CustomerService;
+import com.learning.banking.service.RoleService;
 
 /**
  * CustomerController
@@ -58,7 +67,62 @@ public class CustomerController {
 	@Autowired
 	private AccountService accountService;
 
-	/* TODO: password encoder */
+	@Autowired
+	private PasswordEncoder passwordEncoder;
+	
+	@Autowired
+	private RoleService roleService;
+	
+	@PostMapping("/register")
+	public ResponseEntity<?> registerCustomer(@Valid @RequestBody CreateUserRequest registerUserRequest){
+		
+		Set<Role> roles = new HashSet<>();
+		registerUserRequest.getRoles().forEach(e -> {
+			if (registerUserRequest.getRoles() == null) {
+				Role userRole = roleService.findByRoleName(UserRoles.ROLE_CUSTOMER)
+						.orElseThrow(() -> new IdNotFoundException("role id not found exception"));
+				roles.add(userRole);
+			}
+			switch (e) {
+			case "customer":
+				Role userRole = roleService.findByRoleName(UserRoles.ROLE_CUSTOMER)
+						.orElseThrow(() -> new IdNotFoundException("role id not found exception"));
+				roles.add(userRole);
+				break;
+			case "admin":
+				Role adminRole = roleService.findByRoleName(UserRoles.ROLE_ADMIN)
+						.orElseThrow(() -> new IdNotFoundException("role id not found exception"));
+				roles.add(adminRole);
+				break;
+			case "staff":
+				Role staffRole = roleService.findByRoleName(UserRoles.ROLE_STAFF)
+						.orElseThrow(() -> new IdNotFoundException("role id not found exception"));
+				roles.add(staffRole);
+				break;
+			default:
+				break;
+			}
+
+		});
+		
+		Customer customer = new Customer();
+		customer.setFullName(registerUserRequest.getFirstName(),registerUserRequest.getLastName());
+		customer.setUsername(registerUserRequest.getUsername());
+		String password = passwordEncoder.encode(registerUserRequest.getPassword());
+		customer.setPassword(password);
+		
+		//set role to customer
+		customer.setRoles(roles);
+		Customer c = customerService.addCustomer(customer);
+		
+		CustomerResponse cr = new CustomerResponse();
+		cr.setId(c.getCustomerID());
+		cr.setUsername(c.getUsername());
+		cr.setFirstName(c.getFirstName());
+		cr.setLastName(c.getLastName());
+		//cr.setPassword(c.getPassword());
+		return ResponseEntity.status(201).body(cr);
+	}
 
 	@GetMapping("/{customerID}/account/{accountID}")
 	public ResponseEntity<?> getCustomerAccountByID(@PathVariable Long customerID, @PathVariable Long accountID)
@@ -115,7 +179,7 @@ public class CustomerController {
 		});
 
 		// Return response
-		return ResponseEntity.status(HttpStatus.OK).body(new AddBeneficiaryResponse(addedBeneficiary));
+		return ResponseEntity.status(HttpStatus.CREATED).body(new AddBeneficiaryResponse(addedBeneficiary));
 	}
 
 	@GetMapping("/{customerID}/beneficiary")
@@ -126,8 +190,8 @@ public class CustomerController {
 		});
 
 		// Map beneficiaries to Response object
-		List<GetBeneficiariesResponse> beneficiariesReponseList = customer.getBeneficiaries().stream().map(b -> {
-			return new GetBeneficiariesResponse(b);
+		List<BeneficiaryResponse> beneficiariesReponseList = customer.getBeneficiaries().stream().map(b -> {
+			return new BeneficiaryResponse(b);
 		}).collect(Collectors.toList());
 
 		// Return response
@@ -253,7 +317,7 @@ public class CustomerController {
 			return ResponseEntity.badRequest().body(new ApiMessage("Sorry password not updated"));
 		} else {
 			// Passwords match update accordingly
-			customer.setPassword(request.getPassword()); // TODO: encode password
+			customer.setPassword(passwordEncoder.encode(request.getPassword()));
 			customerService.updateCustomer(customer);
 			
 			return ResponseEntity.ok(new ApiMessage("Password updated successfully"));

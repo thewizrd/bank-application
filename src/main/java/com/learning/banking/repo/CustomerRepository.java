@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import com.learning.banking.entity.Account;
 import com.learning.banking.entity.Customer;
+import com.learning.banking.enums.UserRoles;
 
 /**
  * CustomerRepository
@@ -29,4 +30,6 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 	
 	Optional<Customer> findByUsername(String username);
 	boolean existsByUsername(String username);
+	
+	List<Customer> findCustomersByrolesRoleName(UserRoles roleName);
 }

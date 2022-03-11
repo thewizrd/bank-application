@@ -16,12 +16,12 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class GetBeneficiariesResponse {
+public class BeneficiaryResponse {
 	private long beneficiaryAccountNo;
 	private String beneficiaryName;
 	private BeneficiaryStatus active;
 	
-	public GetBeneficiariesResponse(Beneficiary beneficiary) {
+	public BeneficiaryResponse(Beneficiary beneficiary) {
 		this.beneficiaryAccountNo = beneficiary.getAccount().getAccountNumber();
 		this.beneficiaryName = beneficiary.getAccount().getCustomer().getFullName();
 		this.active = beneficiary.getActive();

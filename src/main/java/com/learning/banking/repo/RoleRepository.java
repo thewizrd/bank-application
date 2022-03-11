@@ -16,6 +16,6 @@ import com.learning.banking.enums.UserRoles;
  */
 @Repository
 public interface RoleRepository extends JpaRepository<Role, Long> {
-	Optional<Role> findRoleByRoleName(UserRoles roleName);
-	Role getRoleByRoleName(UserRoles roleName);
+	Optional<Role> findByRoleName(UserRoles roleName);
+	Role getByRoleName(UserRoles roleName);
 }

@@ -47,7 +47,7 @@ public class TestCustomerResponse {
 	private CustomerStatus status;
 	
 	private List<AccountDetailsResponse> accounts;
-	private List<GetBeneficiariesResponse> beneficiaries;
+	private List<BeneficiaryResponse> beneficiaries;
 	
 	public TestCustomerResponse(Customer customer) {
 		this.customerID = customer.getCustomerID();
@@ -70,7 +70,7 @@ public class TestCustomerResponse {
 		}).collect(Collectors.toList());
 		
 		this.beneficiaries = customer.getBeneficiaries().stream().map(b -> {
-			return new GetBeneficiariesResponse(b);
+			return new BeneficiaryResponse(b);
 		}).collect(Collectors.toList());
 	}
 }
