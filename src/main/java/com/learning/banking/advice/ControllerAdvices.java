@@ -19,6 +19,7 @@ import com.learning.banking.exceptions.IdNotFoundException;
 import com.learning.banking.exceptions.InsufficientFundsException;
 import com.learning.banking.exceptions.NoDataFoundException;
 import com.learning.banking.exceptions.NoRecordsFoundException;
+import com.learning.banking.exceptions.RolePermissionsException;
 import com.learning.banking.exceptions.TransferException;
 import com.learning.banking.exceptions.UserNameAlreadyExistsException;
 import com.learning.banking.payload.response.ApiError;
@@ -71,6 +72,16 @@ public class ControllerAdvices extends ResponseEntityExceptionHandler {
 		return buildResponseEntity(apiError);
 	}
 
+	/**
+	 * admin only can modify staff,staff only modify customer
+	 * @param e
+	 * @return
+	 */
+	@ExceptionHandler(RolePermissionsException.class)
+	public ResponseEntity<?> rolePermission(TransferException e) {
+		ApiError apiError = new ApiError(HttpStatus.BAD_REQUEST, e.getMessage(), e);
+		return buildResponseEntity(apiError);
+	}
 	/* Validation Exceptions */
 	@ExceptionHandler(ConstraintViolationException.class)
 	public ResponseEntity<?> handleConstraintViolationException(ConstraintViolationException e) {

@@ -75,6 +75,23 @@ public class TestController {
 		Customer updated = customerRepo.save(admin);
 		return ResponseEntity.ok(new StaffGetCustomersResponse(updated));
 }
+	@PutMapping("/addStaff")
+	public ResponseEntity<?> addStaff() {
+		Customer admin = new Customer();
+		admin.setFirstName("Administrator");
+		admin.setLastName("");
+		admin.setUsername("staff01");
+		admin.setPassword(passwordEncoder.encode("123"));
+		admin.getRoles().add(roleRepo.getByRoleName(UserRoles.ROLE_STAFF));
+		admin.setSecretQuestion("What's your favorite color?");
+		admin.setSecretAnswer("Blue");
+		admin.setPhone("111-111-1111");
+		admin.setDateCreated(LocalDateTime.now());
+		admin.setStatus(CustomerStatus.ENABLED);
+
+		Customer updated = customerRepo.save(admin);
+		return ResponseEntity.ok(new StaffGetCustomersResponse(updated));
+}
 	
 	@PutMapping("/addStuff")
 	public ResponseEntity<?> addStuff() {
@@ -145,6 +162,7 @@ public class TestController {
 		
 		return ResponseEntity.ok(responseBody);
 	}
+	
 	
 	@GetMapping("/customers")
 	public ResponseEntity<?> getCustomers() {
