@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -42,6 +43,9 @@ public class TestController {
 	@Autowired
 	private RoleRepository roleRepo;
 	
+	@Autowired
+	private PasswordEncoder passwordEncoder;
+	
 	@PutMapping("/addRoles")
 	public ResponseEntity<?> addRoles() {
 		// Add roles
@@ -60,7 +64,7 @@ public class TestController {
 		admin.setFirstName("Administrator");
 		admin.setLastName("");
 		admin.setUsername("admin@admin.com");
-		admin.setPassword("admin123");
+		admin.setPassword(passwordEncoder.encode("admin123"));
 		admin.getRoles().add(roleRepo.getByRoleName(UserRoles.ROLE_ADMIN));
 		admin.setSecretQuestion("What's your favorite color?");
 		admin.setSecretAnswer("Blue");
@@ -79,7 +83,7 @@ public class TestController {
 		customer1.setFirstName("Dave");
 		customer1.setLastName("Antoine");
 		customer1.setUsername("dave");
-		customer1.setPassword("password");
+		customer1.setPassword(passwordEncoder.encode("password"));
 		customer1.getRoles().add(roleRepo.getByRoleName(UserRoles.ROLE_CUSTOMER));
 		customer1.setSecretQuestion("What's your favorite color?");
 		customer1.setSecretAnswer("Blue");
