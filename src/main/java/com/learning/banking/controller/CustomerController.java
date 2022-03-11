@@ -15,6 +15,11 @@ import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -40,6 +45,7 @@ import com.learning.banking.exceptions.NoRecordsFoundException;
 import com.learning.banking.payload.request.AddBeneficiaryRequest;
 import com.learning.banking.payload.request.CreateUserRequest;
 import com.learning.banking.payload.request.ResetPasswordRequest;
+import com.learning.banking.payload.request.SignInRequest;
 import com.learning.banking.payload.request.TransferRequest;
 import com.learning.banking.payload.response.AccountDetailsResponse;
 import com.learning.banking.payload.response.AddBeneficiaryResponse;
@@ -47,7 +53,10 @@ import com.learning.banking.payload.response.ApiMessage;
 import com.learning.banking.payload.response.BeneficiaryResponse;
 import com.learning.banking.payload.response.CustomerResponse;
 import com.learning.banking.payload.response.GetCustomerQandAResponse;
+import com.learning.banking.payload.response.JwtResponse;
 import com.learning.banking.payload.response.TransferResponse;
+import com.learning.banking.security.jwt.JwtUtils;
+import com.learning.banking.security.service.UserDetailsImpl;
 import com.learning.banking.service.AccountService;
 import com.learning.banking.service.CustomerService;
 import com.learning.banking.service.RoleService;
@@ -66,16 +75,20 @@ public class CustomerController {
 	private CustomerService customerService;
 	@Autowired
 	private AccountService accountService;
+	@Autowired
+	private RoleService roleService;
 
 	@Autowired
 	private PasswordEncoder passwordEncoder;
-	
 	@Autowired
-	private RoleService roleService;
-	
+	private AuthenticationManager authenticationManager;
+	@Autowired
+	private JwtUtils jwtUtils;
+
+	// 1
 	@PostMapping("/register")
-	public ResponseEntity<?> registerCustomer(@Valid @RequestBody CreateUserRequest registerUserRequest){
-		
+	public ResponseEntity<?> registerCustomer(@Valid @RequestBody CreateUserRequest registerUserRequest) {
+
 		Set<Role> roles = new HashSet<>();
 		registerUserRequest.getRoles().forEach(e -> {
 			if (registerUserRequest.getRoles() == null) {
@@ -104,26 +117,43 @@ public class CustomerController {
 			}
 
 		});
-		
+
 		Customer customer = new Customer();
-		customer.setFullName(registerUserRequest.getFirstName(),registerUserRequest.getLastName());
+		customer.setFullName(registerUserRequest.getFirstName(), registerUserRequest.getLastName());
 		customer.setUsername(registerUserRequest.getUsername());
 		String password = passwordEncoder.encode(registerUserRequest.getPassword());
 		customer.setPassword(password);
-		
-		//set role to customer
+
+		// set role to customer
 		customer.setRoles(roles);
 		Customer c = customerService.addCustomer(customer);
-		
+
 		CustomerResponse cr = new CustomerResponse();
 		cr.setId(c.getCustomerID());
 		cr.setUsername(c.getUsername());
 		cr.setFirstName(c.getFirstName());
 		cr.setLastName(c.getLastName());
-		//cr.setPassword(c.getPassword());
+		// cr.setPassword(c.getPassword());
 		return ResponseEntity.status(201).body(cr);
 	}
 
+	// 2
+	@PostMapping("/authenticate")
+	public ResponseEntity<?> signInUser(@Valid @RequestBody SignInRequest signInRequest) {
+		Authentication authentication = authenticationManager.authenticate(
+				new UsernamePasswordAuthenticationToken(signInRequest.getUsername(), signInRequest.getPassword()));
+		SecurityContextHolder.getContext().setAuthentication(authentication);
+		String jwt = jwtUtils.generateToken(authentication);
+
+		UserDetailsImpl userDetailsImpl = (UserDetailsImpl) authentication.getPrincipal();
+		List<String> roles = userDetailsImpl.getAuthorities().stream().map(e -> e.getAuthority())
+				.collect(Collectors.toList());
+
+		return ResponseEntity.ok(new JwtResponse(jwt, userDetailsImpl.getId(), userDetailsImpl.getUsername(), roles));
+	}
+
+	// 8
+	@PreAuthorize("hasRole('CUSTOMER')")
 	@GetMapping("/{customerID}/account/{accountID}")
 	public ResponseEntity<?> getCustomerAccountByID(@PathVariable Long customerID, @PathVariable Long accountID)
 			throws NoRecordsFoundException {
@@ -143,6 +173,8 @@ public class CustomerController {
 		return ResponseEntity.status(HttpStatus.OK).body(new AccountDetailsResponse(account));
 	}
 
+	// 9
+	@PreAuthorize("hasRole('CUSTOMER')")
 	@PostMapping("/{customerID}/beneficiary")
 	public ResponseEntity<?> addBeneficiaryToCustomer(@PathVariable Long customerID,
 			@Valid @RequestBody AddBeneficiaryRequest request) throws NoRecordsFoundException {
@@ -182,6 +214,8 @@ public class CustomerController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(new AddBeneficiaryResponse(addedBeneficiary));
 	}
 
+	// 10
+	@PreAuthorize("hasRole('CUSTOMER')")
 	@GetMapping("/{customerID}/beneficiary")
 	public ResponseEntity<?> getBeneficiariesForCustomer(@PathVariable Long customerID) throws NoRecordsFoundException {
 		// Check if customer exists in database
@@ -198,6 +232,8 @@ public class CustomerController {
 		return ResponseEntity.status(HttpStatus.OK).body(beneficiariesReponseList);
 	}
 
+	// 11
+	@PreAuthorize("hasRole('CUSTOMER')")
 	@DeleteMapping("/{customerID}/beneficiary/{beneficiaryID}")
 	public ResponseEntity<?> deleteBeneficiaryFromCustomer(@PathVariable Long customerID,
 			@PathVariable Long beneficiaryID) throws NoRecordsFoundException {
@@ -219,8 +255,11 @@ public class CustomerController {
 		}
 	}
 
+	// 12
+	@PreAuthorize("hasRole('CUSTOMER')")
 	@PutMapping("/transfer")
-	public ResponseEntity<?> accountTransferByCustomer(@Valid @RequestBody TransferRequest request) throws NoRecordsFoundException, InsufficientFundsException {
+	public ResponseEntity<?> accountTransferByCustomer(@Valid @RequestBody TransferRequest request)
+			throws NoRecordsFoundException, InsufficientFundsException {
 		/*
 		 * Transfer flow
 		 * 
@@ -234,31 +273,35 @@ public class CustomerController {
 		 * 6. Save both entities using @Transaction
 		 * 7. Return payload
 		 */
-		
+
 		// 1. Retrieve accounts
-		final Account fromAccount = accountService.getAccountByAccountNumber(request.getFromAccNumber()).orElseThrow(() -> {
-			return new NoRecordsFoundException("Account number: " + request.getFromAccNumber() + " cannot be found");
-		});
+		final Account fromAccount = accountService.getAccountByAccountNumber(request.getFromAccNumber())
+				.orElseThrow(() -> {
+					return new NoRecordsFoundException(
+							"Account number: " + request.getFromAccNumber() + " cannot be found");
+				});
 		final Account toAccount = accountService.getAccountByAccountNumber(request.getToAccNumber()).orElseThrow(() -> {
 			return new NoRecordsFoundException("Account number: " + request.getToAccNumber() + " cannot be found");
 		});
-		
+
 		// 2. Retrieve initiating customer
 		final Customer initiatedBy = customerService.getCustomerByID(request.getBy()).orElseThrow(() -> {
 			return new NoRecordsFoundException("Customer with ID: " + request.getBy() + " not found");
 		});
-		
+
 		// 3. Validate funds
 		if (fromAccount.getAccountBalance().subtract(request.getAmount()).compareTo(BigDecimal.ZERO) < 0) {
 			// Amount is negative after subtraction; account has insufficient funds
-			throw new InsufficientFundsException(String.format("Account number: %d does not have sufficient funds to process transfer" , request.getFromAccNumber()));
+			throw new InsufficientFundsException(
+					String.format("Account number: %d does not have sufficient funds to process transfer",
+							request.getFromAccNumber()));
 		} else {
 			// 4. Deduct amount
 			fromAccount.setAccountBalance(fromAccount.getAccountBalance().subtract(request.getAmount()));
 			// 4a. Add amount
 			toAccount.setAccountBalance(toAccount.getAccountBalance().add(request.getAmount()));
 		}
-		
+
 		final LocalDateTime now = LocalDateTime.now();
 
 		// 5. Create Transaction objects
@@ -279,7 +322,7 @@ public class CustomerController {
 		toTransaction.setInitiatedBy(initiatedBy);
 		// 5a. Add to list
 		toAccount.getTransactions().add(toTransaction);
-		
+
 		// 6. Save entities
 		accountService.updateAccounts(Arrays.asList(fromAccount, toAccount));
 
@@ -290,27 +333,33 @@ public class CustomerController {
 		response.setAmount(request.getAmount());
 		response.setReason(request.getReason());
 		response.setBy(request.getBy());
-		
+
 		return ResponseEntity.ok(response);
 	}
 
+	// 13
+	@PreAuthorize("hasRole('CUSTOMER')")
 	@GetMapping("/{username}/forgot/question/answer")
 	public ResponseEntity<?> getCustomerSecurityQandA(@PathVariable String username) throws NoRecordsFoundException {
 		// Check if customer exists in database
 		Customer customer = customerService.getCustomerByUsername(username).orElseThrow(() -> {
 			return new NoRecordsFoundException("Customer with username: " + username + " not found");
 		});
-		
-		return ResponseEntity.ok(new GetCustomerQandAResponse(customer.getSecretQuestion(), customer.getSecretAnswer()));
+
+		return ResponseEntity
+				.ok(new GetCustomerQandAResponse(customer.getSecretQuestion(), customer.getSecretAnswer()));
 	}
-	
+
+	// 14
+	@PreAuthorize("hasRole('CUSTOMER')")
 	@PutMapping("/{username}/forgot")
-	public ResponseEntity<?> updateForgottenPassword(@PathVariable String username, @Valid @RequestBody ResetPasswordRequest request) throws NoRecordsFoundException {
+	public ResponseEntity<?> updateForgottenPassword(@PathVariable String username,
+			@Valid @RequestBody ResetPasswordRequest request) throws NoRecordsFoundException {
 		// Check if customer exists in database
 		Customer customer = customerService.getCustomerByUsername(username).orElseThrow(() -> {
 			return new NoRecordsFoundException("Customer with username: " + username + " not found");
 		});
-		
+
 		// Check if passwords match
 		if (!Objects.equals(request.getPassword(), request.getConfirmPassword())) {
 			// Passwords don't match
@@ -319,7 +368,7 @@ public class CustomerController {
 			// Passwords match update accordingly
 			customer.setPassword(passwordEncoder.encode(request.getPassword()));
 			customerService.updateCustomer(customer);
-			
+
 			return ResponseEntity.ok(new ApiMessage("Password updated successfully"));
 		}
 	}
