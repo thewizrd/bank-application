@@ -32,4 +32,6 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 	boolean existsByUsername(String username);
 	
 	List<Customer> findCustomersByrolesRoleName(UserRoles roleName);
+	
+	
 }
