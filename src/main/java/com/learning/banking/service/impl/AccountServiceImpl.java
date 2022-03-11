@@ -40,4 +40,14 @@ public class AccountServiceImpl implements AccountService {
 	public Optional<Account> findAccountByAccountNumber(Long accountNumber) {
 		return repo.findAccountByAccountNumber(accountNumber);
 	}
+
+	@Override
+	public Account updateAccount(Account account) {
+		return repo.save(account);
+	}
+
+	@Override
+	public List<Account> getAllAccounts() {
+		return repo.findAll();
+	}
 }

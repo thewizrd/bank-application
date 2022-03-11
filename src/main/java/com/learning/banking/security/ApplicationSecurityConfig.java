@@ -50,17 +50,33 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter {
 
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
-		http.cors().and().csrf().disable()// disable cors and csrf
-				.exceptionHandling().authenticationEntryPoint(unauthorizedHandler).and().sessionManagement()
-				.sessionCreationPolicy(SessionCreationPolicy.STATELESS).and().authorizeRequests()
-				.antMatchers("/customer/register").permitAll().antMatchers("/admin/authenticate").permitAll()
-				.anyRequest().authenticated().and().httpBasic();
+		http.cors()
+			.and()
+			.csrf()
+				.disable()// disable cors and csrf
+			.exceptionHandling()
+				.authenticationEntryPoint(unauthorizedHandler)
+			.and()
+			.sessionManagement()
+				.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+			.and()
+			.authorizeRequests()
+				.antMatchers("/customer/register", "/customer/authenticate")
+					.permitAll()
+				.antMatchers("/admin/authenticate")
+					.permitAll()
+				.antMatchers("/staff/authenticate")
+					.permitAll()
+				.anyRequest()
+					.authenticated()
+			.and()
+			.httpBasic();
 
 		http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
 	}
 
 	@Bean
 	public PasswordEncoder passwrodEncoder() {
-		return new BCryptPasswordEncoder();
+		return new BCryptPasswordEncoder(12);
 	}
 }
