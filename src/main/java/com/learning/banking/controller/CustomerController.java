@@ -3,6 +3,7 @@ package com.learning.banking.controller;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -15,6 +16,7 @@ import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -36,17 +38,22 @@ import com.learning.banking.enums.TransactionType;
 import com.learning.banking.enums.UserRoles;
 import com.learning.banking.exceptions.IdNotFoundException;
 import com.learning.banking.exceptions.InsufficientFundsException;
+import com.learning.banking.exceptions.NoDataFoundException;
 import com.learning.banking.exceptions.NoRecordsFoundException;
 import com.learning.banking.payload.request.AddBeneficiaryRequest;
+import com.learning.banking.payload.request.ApproveAccountRequest;
 import com.learning.banking.payload.request.CreateUserRequest;
 import com.learning.banking.payload.request.ResetPasswordRequest;
 import com.learning.banking.payload.request.TransferRequest;
 import com.learning.banking.payload.response.AccountDetailsResponse;
 import com.learning.banking.payload.response.AddBeneficiaryResponse;
+import com.learning.banking.payload.response.AllAccountsResponse;
 import com.learning.banking.payload.response.ApiMessage;
+import com.learning.banking.payload.response.ApprovedAccountResponse;
 import com.learning.banking.payload.response.BeneficiaryResponse;
 import com.learning.banking.payload.response.CustomerResponse;
 import com.learning.banking.payload.response.GetCustomerQandAResponse;
+import com.learning.banking.payload.response.StaffApproveAccountResponse;
 import com.learning.banking.payload.response.TransferResponse;
 import com.learning.banking.service.AccountService;
 import com.learning.banking.service.CustomerService;
@@ -69,13 +76,13 @@ public class CustomerController {
 
 	@Autowired
 	private PasswordEncoder passwordEncoder;
-	
+
 	@Autowired
 	private RoleService roleService;
-	
+
 	@PostMapping("/register")
-	public ResponseEntity<?> registerCustomer(@Valid @RequestBody CreateUserRequest registerUserRequest){
-		
+	public ResponseEntity<?> registerCustomer(@Valid @RequestBody CreateUserRequest registerUserRequest) {
+
 		Set<Role> roles = new HashSet<>();
 		registerUserRequest.getRoles().forEach(e -> {
 			if (registerUserRequest.getRoles() == null) {
@@ -104,23 +111,23 @@ public class CustomerController {
 			}
 
 		});
-		
+
 		Customer customer = new Customer();
-		customer.setFullName(registerUserRequest.getFirstName(),registerUserRequest.getLastName());
+		customer.setFullName(registerUserRequest.getFirstName(), registerUserRequest.getLastName());
 		customer.setUsername(registerUserRequest.getUsername());
 		String password = passwordEncoder.encode(registerUserRequest.getPassword());
 		customer.setPassword(password);
-		
-		//set role to customer
+
+		// set role to customer
 		customer.setRoles(roles);
 		Customer c = customerService.addCustomer(customer);
-		
+
 		CustomerResponse cr = new CustomerResponse();
 		cr.setId(c.getCustomerID());
 		cr.setUsername(c.getUsername());
 		cr.setFirstName(c.getFirstName());
 		cr.setLastName(c.getLastName());
-		//cr.setPassword(c.getPassword());
+		// cr.setPassword(c.getPassword());
 		return ResponseEntity.status(201).body(cr);
 	}
 
@@ -220,45 +227,49 @@ public class CustomerController {
 	}
 
 	@PutMapping("/transfer")
-	public ResponseEntity<?> accountTransferByCustomer(@Valid @RequestBody TransferRequest request) throws NoRecordsFoundException, InsufficientFundsException {
+	public ResponseEntity<?> accountTransferByCustomer(@Valid @RequestBody TransferRequest request)
+			throws NoRecordsFoundException, InsufficientFundsException {
 		/*
 		 * Transfer flow
 		 * 
-		 * 1. Retrieve Accounts matching account numbers (fromAccount and toAccount)
-		 * 1a. Throw exception if accounts can't be found
-		 * 2. Retrieve Customer object who initiated request (using by [ID] from request)
-		 * 3. Check if account (fromAccount) has enough funds to deduct from
-		 * 3a. If funds not available throw exception (InsufficientFundsException?)
-		 * 4. Deduct amount from "fromAccount" and add to "toAccount"
-		 * 5. Create 2 separate Transaction entries and add to both accounts
-		 * 6. Save both entities using @Transaction
-		 * 7. Return payload
+		 * 1. Retrieve Accounts matching account numbers (fromAccount and toAccount) 1a.
+		 * Throw exception if accounts can't be found 2. Retrieve Customer object who
+		 * initiated request (using by [ID] from request) 3. Check if account
+		 * (fromAccount) has enough funds to deduct from 3a. If funds not available
+		 * throw exception (InsufficientFundsException?) 4. Deduct amount from
+		 * "fromAccount" and add to "toAccount" 5. Create 2 separate Transaction entries
+		 * and add to both accounts 6. Save both entities using @Transaction 7. Return
+		 * payload
 		 */
-		
+
 		// 1. Retrieve accounts
-		final Account fromAccount = accountService.getAccountByAccountNumber(request.getFromAccNumber()).orElseThrow(() -> {
-			return new NoRecordsFoundException("Account number: " + request.getFromAccNumber() + " cannot be found");
-		});
+		final Account fromAccount = accountService.getAccountByAccountNumber(request.getFromAccNumber())
+				.orElseThrow(() -> {
+					return new NoRecordsFoundException(
+							"Account number: " + request.getFromAccNumber() + " cannot be found");
+				});
 		final Account toAccount = accountService.getAccountByAccountNumber(request.getToAccNumber()).orElseThrow(() -> {
 			return new NoRecordsFoundException("Account number: " + request.getToAccNumber() + " cannot be found");
 		});
-		
+
 		// 2. Retrieve initiating customer
 		final Customer initiatedBy = customerService.getCustomerByID(request.getBy()).orElseThrow(() -> {
 			return new NoRecordsFoundException("Customer with ID: " + request.getBy() + " not found");
 		});
-		
+
 		// 3. Validate funds
 		if (fromAccount.getAccountBalance().subtract(request.getAmount()).compareTo(BigDecimal.ZERO) < 0) {
 			// Amount is negative after subtraction; account has insufficient funds
-			throw new InsufficientFundsException(String.format("Account number: %d does not have sufficient funds to process transfer" , request.getFromAccNumber()));
+			throw new InsufficientFundsException(
+					String.format("Account number: %d does not have sufficient funds to process transfer",
+							request.getFromAccNumber()));
 		} else {
 			// 4. Deduct amount
 			fromAccount.setAccountBalance(fromAccount.getAccountBalance().subtract(request.getAmount()));
 			// 4a. Add amount
 			toAccount.setAccountBalance(toAccount.getAccountBalance().add(request.getAmount()));
 		}
-		
+
 		final LocalDateTime now = LocalDateTime.now();
 
 		// 5. Create Transaction objects
@@ -279,7 +290,7 @@ public class CustomerController {
 		toTransaction.setInitiatedBy(initiatedBy);
 		// 5a. Add to list
 		toAccount.getTransactions().add(toTransaction);
-		
+
 		// 6. Save entities
 		accountService.updateAccounts(Arrays.asList(fromAccount, toAccount));
 
@@ -290,7 +301,7 @@ public class CustomerController {
 		response.setAmount(request.getAmount());
 		response.setReason(request.getReason());
 		response.setBy(request.getBy());
-		
+
 		return ResponseEntity.ok(response);
 	}
 
@@ -300,17 +311,19 @@ public class CustomerController {
 		Customer customer = customerService.getCustomerByUsername(username).orElseThrow(() -> {
 			return new NoRecordsFoundException("Customer with username: " + username + " not found");
 		});
-		
-		return ResponseEntity.ok(new GetCustomerQandAResponse(customer.getSecretQuestion(), customer.getSecretAnswer()));
+
+		return ResponseEntity
+				.ok(new GetCustomerQandAResponse(customer.getSecretQuestion(), customer.getSecretAnswer()));
 	}
-	
+
 	@PutMapping("/{username}/forgot")
-	public ResponseEntity<?> updateForgottenPassword(@PathVariable String username, @Valid @RequestBody ResetPasswordRequest request) throws NoRecordsFoundException {
+	public ResponseEntity<?> updateForgottenPassword(@PathVariable String username,
+			@Valid @RequestBody ResetPasswordRequest request) throws NoRecordsFoundException {
 		// Check if customer exists in database
 		Customer customer = customerService.getCustomerByUsername(username).orElseThrow(() -> {
 			return new NoRecordsFoundException("Customer with username: " + username + " not found");
 		});
-		
+
 		// Check if passwords match
 		if (!Objects.equals(request.getPassword(), request.getConfirmPassword())) {
 			// Passwords don't match
@@ -319,8 +332,71 @@ public class CustomerController {
 			// Passwords match update accordingly
 			customer.setPassword(passwordEncoder.encode(request.getPassword()));
 			customerService.updateCustomer(customer);
-			
+
 			return ResponseEntity.ok(new ApiMessage("Password updated successfully"));
 		}
 	}
+
+	/**
+	 * Role: Staff To approve the account which is create by customer
+	 */
+	@PutMapping("/{customerID}/account/{accountNumber}")
+	@PreAuthorize("hasRole('STAFF')")
+	public ResponseEntity<?> approveTheCustomerAccount(@RequestBody ApproveAccountRequest request)
+			throws NoRecordsFoundException {
+		// Check if account exists in database
+		Long accountNum = request.getAccountNumber();
+		if (accountService.existsByAccountNumber(accountNum)) {
+			Account account = accountService.findAccountByAccountNumber(accountNum).get();
+			if (request.getApproved().equalsIgnoreCase("yes")) {
+				account.setApproved(true);
+			} else {
+				account.setApproved(false);
+			}
+			account = accountService.updateAccount(account);
+			StaffApproveAccountResponse accountResponse = new StaffApproveAccountResponse();
+			accountResponse.setAccountNumber(account.getAccountNumber());
+			if (account.isApproved() == true) {
+				accountResponse.setApproved("yes");
+			} else {
+				accountResponse.setApproved("no");
+			}
+			return ResponseEntity.ok(accountResponse);
+		} else {
+
+			throw new NoDataFoundException("Please check Account Number");
+		}
+	}
+
+	/**
+	 * To get all the accounts which are opened by the customer the end point should
+	 * return an array of account, balance, and type, and status.
+	 * 
+	 * @return
+	 * @throws NoRecordsFoundException
+	 */
+
+	@GetMapping("/{customerID}/account")
+	public ResponseEntity<?> getCustomerAccounts(@PathVariable("customerID") Long id) throws NoRecordsFoundException {
+		// Check if customer exists in database
+		System.out.println("start");
+		if (customerService.existsByID(id)) {
+			List<Account> accounts = accountService.findAccountsByCustomerCustomerID(id);
+			List<AllAccountsResponse> accountsResponses = new ArrayList<>();
+			accounts.forEach(a -> {
+				AllAccountsResponse account = new AllAccountsResponse();
+				account.setAccountNumber(a.getAccountNumber());
+				account.setAccountBalance(a.getAccountBalance());
+				account.setAccountStatus(a.getAccountStatus());
+				account.setAccountType(a.getAccountType());
+				accountsResponses.add(account);
+			});
+
+			return ResponseEntity.ok(accountsResponses);
+		} else {
+			throw new NoDataFoundException("No customer data found");
+		}
+
+	}
+
 }
