@@ -50,4 +50,10 @@ public class AccountServiceImpl implements AccountService {
 	public List<Account> getAllAccounts() {
 		return repo.findAll();
 	}
+
+	@Override
+	public Account addAccount(Account account) {
+		// TODO Auto-generated method stub
+		return repo.save(account);
+	}
 }

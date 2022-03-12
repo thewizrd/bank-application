@@ -4,6 +4,7 @@ import java.util.Set;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -22,6 +23,15 @@ public class CreateUserRequest {
 	private String lastName;
 	@NotBlank
 	private String password;
-	
+	@NotBlank
+	private String phone;
+	@NotBlank
+	private String aadhar;
+	@NotBlank
+	private String pan;
+	@NotBlank
+	private String secretQuestion;
+	@NotBlank
+	private String secretAnswer;
 	private Set<String> roles;
 }
