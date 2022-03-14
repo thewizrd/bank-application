@@ -22,21 +22,10 @@ public class CustomerResponse {
 	private String firstName;
 	private String lastName;
 	
-	private String phone;
-	
-	private String pan;
-	
-	private String aadhar;
-	
 	public CustomerResponse(Customer customer) {
 		this.id = customer.getCustomerID();
 		this.username = customer.getUsername();
 		this.firstName = customer.getFirstName();
 		this.lastName = customer.getLastName();
-
-		this.phone = customer.getPhone();
-		
-		this.pan = customer.getPan();
-		this.aadhar = customer.getAadhar();
 	}
 }

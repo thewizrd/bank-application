@@ -22,4 +22,6 @@ public interface AccountService {
 	Optional<Account> findAccountByAccountNumber(Long accountNumber);
 	
 	List<Account> findAccountsByCustomerCustomerID(Long id);
+
+  Account addAccount(Account account);
 }
