@@ -7,32 +7,29 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * UpdateCustomerRequest
+ * CreateStaffRequest
  *
  * @author bryan
- * @date Mar 6, 2022-4:54:52 PM
+ * @date Mar 14, 2022-9:43:28 AM
  */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class UpdateCustomerRequest {
+public class CreateStaffRequest {
+	@NotBlank
+	private String username;
 	@NotBlank
 	private String firstName;
+	
 	@NotBlank
 	private String lastName;
 	@NotBlank
-	private String phone;
-	@NotBlank
-	private String pan;
-	@NotBlank
-	private String aadhar;
+	private String password;
+
+	/*
 	@NotBlank
 	private String secretQuestion;
 	@NotBlank
 	private String secretAnswer;
-
-	/*
-	private Object pan; // multipart?
-	private Object aarchar; // multipart?
 	*/
 }

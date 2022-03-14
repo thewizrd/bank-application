@@ -5,10 +5,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.validation.Valid;
@@ -61,9 +59,9 @@ import com.learning.banking.payload.response.ApiMessage;
 import com.learning.banking.payload.response.BeneficiaryResponse;
 import com.learning.banking.payload.response.CreateAccountResponse;
 import com.learning.banking.payload.response.CustomerResponse;
-import com.learning.banking.payload.response.RegisterCustomerResponse;
 import com.learning.banking.payload.response.GetCustomerQandAResponse;
 import com.learning.banking.payload.response.JwtResponse;
+import com.learning.banking.payload.response.RegisterCustomerResponse;
 import com.learning.banking.payload.response.StaffApproveAccountResponse;
 import com.learning.banking.payload.response.TransferResponse;
 import com.learning.banking.security.jwt.JwtUtils;
@@ -105,35 +103,6 @@ public class CustomerController {
 	// 1
 	@PostMapping("/register")
 	public ResponseEntity<?> registerCustomer(@Valid @RequestBody CreateUserRequest registerUserRequest) {
-		Set<Role> roles = new HashSet<>();
-		if (registerUserRequest.getRoles() == null) {
-			Role userRole = roleService.findByRoleName(UserRoles.ROLE_CUSTOMER)
-					.orElseThrow(() -> new IdNotFoundException("role id not found exception"));
-			roles.add(userRole);
-		} else {
-			registerUserRequest.getRoles().forEach(e -> {
-				switch (e) {
-				case "admin":
-					Role adminRole = roleService.findByRoleName(UserRoles.ROLE_ADMIN)
-							.orElseThrow(() -> new IdNotFoundException("role id not found exception"));
-					roles.add(adminRole);
-					break;
-				case "staff":
-					Role staffRole = roleService.findByRoleName(UserRoles.ROLE_STAFF)
-							.orElseThrow(() -> new IdNotFoundException("role id not found exception"));
-					roles.add(staffRole);
-					break;
-				default: // default role will be customer
-				case "customer":
-					Role userRole = roleService.findByRoleName(UserRoles.ROLE_CUSTOMER)
-							.orElseThrow(() -> new IdNotFoundException("role id not found exception"));
-					roles.add(userRole);
-					break;
-				}
-
-			});
-		}
-
 		Customer customer = new Customer();
 		customer.setFullName(registerUserRequest.getFirstName(), registerUserRequest.getLastName());
 		customer.setUsername(registerUserRequest.getUsername());
@@ -151,7 +120,9 @@ public class CustomerController {
 		customer.setStatus(CustomerStatus.ENABLED);
 
 		// set role to customer
-		customer.setRoles(roles);
+		Role userRole = roleService.findByRoleName(UserRoles.ROLE_CUSTOMER)
+				.orElseThrow(() -> new IdNotFoundException("role id not found exception"));
+		customer.getRoles().add(userRole);
 		Customer c = customerService.addCustomer(customer);
 
 		RegisterCustomerResponse cr = new RegisterCustomerResponse();
@@ -212,7 +183,7 @@ public class CustomerController {
 			Authentication authentication = getAuthentication();
 			UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 			final Customer approver = customerService.getCustomerByID(userDetails.getId()).orElseThrow(() ->{
-				return new NoRecordsFoundException("Customer with ID: " + customerID + " not found");
+				return new NoRecordsFoundException("Customer with ID: " + userDetails.getId() + " not found");
 			});
 
 			Account account = accountService.findAccountByAccountNumber(accountNum).get();

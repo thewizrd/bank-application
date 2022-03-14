@@ -1,9 +1,6 @@
 package com.learning.banking.payload.request;
 
-import java.util.Set;
-
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotEmpty;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -32,6 +29,4 @@ public class CreateUserRequest {
 	private String secretQuestion;
 	@NotBlank
 	private String secretAnswer;
-	@NotEmpty
-	private Set<String> roles;
 }

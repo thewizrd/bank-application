@@ -42,9 +42,9 @@ import com.learning.banking.exceptions.NoRecordsFoundException;
 import com.learning.banking.exceptions.RolePermissionsException;
 import com.learning.banking.payload.request.ApproveBeneficiaryRequest;
 import com.learning.banking.payload.request.ApprovedAccountRequest;
-import com.learning.banking.payload.request.CustomerRequest;
 import com.learning.banking.payload.request.SignInRequest;
 import com.learning.banking.payload.request.TransferAmountRequest;
+import com.learning.banking.payload.request.UpdateCustomerStatusRequest;
 import com.learning.banking.payload.response.AccountLookupResponse;
 import com.learning.banking.payload.response.AllCustomersResponse;
 import com.learning.banking.payload.response.ApprovedAccountResponse;
@@ -80,18 +80,19 @@ public class StaffController {
 	private AuthenticationManager authenticationManager;
 	@Autowired
 	private JwtUtils jwtUtils;
+	
+	private Authentication getAuthentication() {
+		return SecurityContextHolder.getContext().getAuthentication();
+	}
 
+	// 22
 	// Enable or disable the customer, based on that the customer should be able to
 	// login
 	@PutMapping(value = "/customer")
 	@PreAuthorize("hasRole('STAFF')")
-	public ResponseEntity<?> changeCustomerStatus(@Valid @RequestBody CustomerRequest customerRequest)
+	public ResponseEntity<?> changeCustomerStatus(@Valid @RequestBody UpdateCustomerStatusRequest customerRequest)
 			throws NoRecordsFoundException {
-
-		// new comment
-
 		// customer should be able to login
-
 		Long customerId = customerRequest.getCustomerId();
 		if (customerService.existsByID(customerId)) {
 			Customer customer = customerService.getCustomerByID(customerId).get();
@@ -105,9 +106,10 @@ public class StaffController {
 			}
 
 			if (permissonCus) {
-				CustomerStatus status = customerRequest.getCustomerStatus();
+				CustomerStatus status = customerRequest.getStatus();
 				customer.setStatus(status);
 				Customer c = customerService.updateCustomer(customer);
+
 				CustomerResponseFromStaff customerResponse = new CustomerResponseFromStaff();
 				customerResponse.setId(c.getCustomerID());
 				customerResponse.setFullname(c.getFullName());
@@ -118,7 +120,6 @@ public class StaffController {
 			} else {
 				throw new RolePermissionsException("No permissions");
 			}
-
 		} else {
 			throw new NoDataFoundException("Customer status not changed");
 		}
@@ -143,11 +144,15 @@ public class StaffController {
 	// To transfer the amount from one account to another account
 	@PutMapping(value = "/transfer")
 	@PreAuthorize("hasRole('STAFF')")
-	public ResponseEntity<?> doTransfer(@Valid @RequestBody TransferAmountRequest trans) {
+	public ResponseEntity<?> doTransfer(@Valid @RequestBody TransferAmountRequest trans) throws NoRecordsFoundException {
 		// From/To Account Number valid
 		Long fromAccNumber = trans.getFromAccNumber();
 		Long toAccNumber = trans.getToAccNumber();
 		BigDecimal amount = trans.getAmount();
+		
+		Customer staffMember = customerService.getCustomerByUsername(trans.getByStaff()).orElseThrow(() ->{
+			return new NoRecordsFoundException("Staff member not found");
+		});
 
 		if (accountService.existsByAccountNumber(fromAccNumber) && accountService.existsByAccountNumber(toAccNumber)) {
 			System.out.println("start transfer money!!!!");
@@ -160,6 +165,7 @@ public class StaffController {
 			transaction1.setDate(LocalDateTime.now());
 			transaction1.setReference(trans.getReason());
 			transaction1.setTransactionType(TransactionType.DEBIT);
+			transaction1.setInitiatedBy(staffMember);
 			Transaction transaction01 = transactionService.addTransaction(transaction1);
 
 			Account toAccount = accountService.findAccountByAccountNumber(toAccNumber).get();
@@ -169,7 +175,8 @@ public class StaffController {
 			transaction2.setDate(LocalDateTime.now());
 			transaction2.setReference(trans.getReason());
 			transaction2.setTransactionType(TransactionType.DEBIT);
-			Transaction transaction02 = transactionService.addTransaction(transaction2);
+			transaction2.setInitiatedBy(staffMember);
+			transactionService.addTransaction(transaction2);
 
 			StaffTransactionResponse transactionResponse = new StaffTransactionResponse();
 			transactionResponse.setAmount(amount);
@@ -200,7 +207,7 @@ public class StaffController {
 	}
 
 	// 16
-	@GetMapping("/account/:{accountNo}")
+	@GetMapping("/account/{accountNo}")
 	@PreAuthorize("hasRole('ROLE_STAFF')")
 	public ResponseEntity<?> getCustomerByAccountNumber(@PathVariable("accountNo") long accountNo)
 			throws NoDataFoundException {
@@ -236,7 +243,7 @@ public class StaffController {
 				NonApprovedBeneficiaryResponse beneficiary = new NonApprovedBeneficiaryResponse();
 				beneficiary.setBeneficiaryAccountNumber(e.getAccount().getAccountNumber());
 				beneficiary.setDateAdded(e.getAddedDate());
-				beneficiary.setFromCustomer(e.getAccount().getCustomer().getCustomerID());
+				beneficiary.setFromCustomer(e.getBeneficiaryOf().getCustomerID());
 				beneficiary.setIsApproved("no");
 				nonApprovedBeneficiaries.add(beneficiary);
 			}
@@ -245,21 +252,31 @@ public class StaffController {
 	}
 
 	// 18
-	@PutMapping(value = "/beneficiary{staffId}")
+	@PutMapping(value = "/beneficiary")
 	@PreAuthorize("hasRole('ROLE_STAFF')")
-	public ResponseEntity<?> approveBeneficiary(@PathVariable("staffId") long staffId,
-			@RequestBody ApproveBeneficiaryRequest request) throws NoDataFoundException {
-		// TODO: process PUT request
-		// Customer customer =
-		// customerService.getCustomerById(request.getCustomerId()).orElseThrow(()-> new
-		// NoDataFoundException("Sorry customer does not exist."));
+	public ResponseEntity<?> approveBeneficiary(@Valid @RequestBody ApproveBeneficiaryRequest request) throws NoDataFoundException, NoRecordsFoundException {
 		if (request.getIsApproved().equalsIgnoreCase("yes")) {
-			Beneficiary beneficiary = beneficiaryService.getBeneficiaryById(request.getBeneficiaryAccountNumber());
+			// Get Staff details
+			Authentication authentication = getAuthentication();
+			UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+			final Customer approver = customerService.getCustomerByID(userDetails.getId()).orElseThrow(() ->{
+				return new NoRecordsFoundException("Customer with ID: " + userDetails.getId() + " not found");
+			});
+			
+			// Retrieve customer
+			Customer customer = customerService.getCustomerByID(request.getCustomerId()).orElseThrow(() ->{
+				return new NoRecordsFoundException("Customer with ID: " + request.getCustomerId() + " not found");
+			});
+
+			// Get beneficiary matching account number
+			Beneficiary beneficiary = customer.getBeneficiaries().stream().filter((b) -> {
+				return b.getAccount().getAccountNumber() == request.getBeneficiaryAccountNumber();
+			}).findFirst().orElseThrow(() -> {
+				return new NoRecordsFoundException("Beneficiary with account number: " + request.getBeneficiaryAccountNumber() + " not found");
+			});
 			beneficiary.setApproved(true);
 			beneficiary.setActive(BeneficiaryStatus.YES);
-			beneficiary.setAddedDate(request.getDateOfApproval());
-			beneficiary.setApprovedBy(customerService.getCustomerByID(staffId)
-					.orElseThrow(() -> new NoDataFoundException("Staff member not found for approval.")));
+			beneficiary.setApprovedBy(approver);
 			beneficiaryService.saveBeneficiary(beneficiary);
 		} else {
 			Map<String, String> responseBody = new HashMap<String, String>();
@@ -284,7 +301,7 @@ public class StaffController {
 				nonApprovedAccount.setAccountType(e.getAccountType().toString());
 				nonApprovedAccount.setApproved("no");
 				nonApprovedAccount
-						.setCustomerName(e.getCustomer().getFirstName() + " " + e.getCustomer().getLastName());
+						.setCustomerName(e.getCustomer().getFullName());
 				nonApprovedAccount.setDateCreated(e.getDateOfCreation().toLocalDate());
 				nonApprovedAccounts.add(nonApprovedAccount);
 			}
@@ -294,43 +311,36 @@ public class StaffController {
 	}
 
 	// 20
-	@PutMapping(value = "accounts/approve{staffId}")
+	@PutMapping(value = "accounts/approve")
 	@PreAuthorize("hasRole('ROLE_STAFF')")
-	public ResponseEntity<?> approveCustomerAccounts(@PathVariable("staffId") long staffId,
-			@RequestBody ApprovedAccountRequest request) throws NoDataFoundException {
-		// TODO: process PUT request
-		List<ApprovedAccountResponse> responseBody = new ArrayList<ApprovedAccountResponse>();
+	public ResponseEntity<?> approveCustomerAccounts(@Valid @RequestBody ApprovedAccountRequest request) throws NoDataFoundException {
 		if (request.getApproved().equalsIgnoreCase("yes")) {
-			Customer customer = customerService.getCustomerByUsername(request.getUsername())
-					.orElseThrow(() -> new NoDataFoundException("Customer not found."));
-			Customer staffMember = customerService.getCustomerByID(staffId)
+			Customer staffMember = customerService.getCustomerByUsername(request.getStaffUserName())
 					.orElseThrow(() -> new NoDataFoundException("Staff member not found."));
-
-			customer.getAccounts().forEach(e -> {
-				if (!e.isApproved()) {
-					e.setApproved(true);
-					e.setApprovedBy(staffMember);
-					accountService.updateAccount(e);
-
-					ApprovedAccountResponse responseEntity = new ApprovedAccountResponse();
-					responseEntity.setAccountNumber(e.getAccountNumber());
-					responseEntity.setAccountType(e.getAccountType().toString());
-					responseEntity.setApproved("yes");
-					responseEntity.setDateCreated(e.getDateOfCreation().toLocalDate());
-					responseEntity.setFirstName(e.getCustomer().getFirstName());
-					responseEntity.setLastName(e.getCustomer().getLastName());
-					responseEntity.setUsername(e.getCustomer().getUsername());
-					responseBody.add(responseEntity);
-				}
+			Account customerAccount = accountService.findAccountByAccountNumber(request.getAccountNumber()).orElseThrow(() -> {
+				return new NoDataFoundException("Account not found.");
 			});
-		}
-		if (responseBody.isEmpty()) {
+			
+			customerAccount.setApproved(true);
+			customerAccount.setApprovedBy(staffMember);
+			customerAccount = accountService.updateAccount(customerAccount);
+
+			ApprovedAccountResponse responseEntity = new ApprovedAccountResponse();
+			responseEntity.setAccountNumber(customerAccount.getAccountNumber());
+			responseEntity.setAccountType(customerAccount.getAccountType());
+			responseEntity.setApproved("yes");
+			responseEntity.setDateCreated(customerAccount.getDateOfCreation().toLocalDate());
+			responseEntity.setFirstName(customerAccount.getCustomer().getFirstName());
+			responseEntity.setLastName(customerAccount.getCustomer().getLastName());
+			responseEntity.setStaffUserName(staffMember.getUsername());
+
+			return ResponseEntity.status(200).body(responseEntity);
+		} else {
 			Map<String, String> responseBodyMap = new HashMap<String, String>();
 			responseBodyMap.put("message",
 					"Approving of account was not successful or there were no accounts to approve.");
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseBodyMap);
 		}
-		return ResponseEntity.status(200).body(responseBody);
 	}
 
 	// 21
@@ -341,11 +351,24 @@ public class StaffController {
 		List<Customer> allCustomers = new ArrayList<Customer>();
 		allCustomers = customerService.getAllCustomers();
 		allCustomers.forEach(e -> {
-			AllCustomersResponse entity = new AllCustomersResponse();
-			entity.setCustomerId(e.getCustomerID());
-			entity.setCustomerName(e.getFirstName() + " " + e.getLastName());
-			entity.setStatus(e.getStatus().toString());
-			responseBody.add(entity);
+			boolean isCustomer = false;
+
+			if (e.getRoles() != null && !e.getRoles().isEmpty()) {
+				for (Role role : e.getRoles()) {
+					if (role.getRoleName() == UserRoles.ROLE_CUSTOMER) {
+						isCustomer = true;
+						break;
+					}
+				}
+			}
+			
+			if (isCustomer) {
+				AllCustomersResponse entity = new AllCustomersResponse();
+				entity.setCustomerId(e.getCustomerID());
+				entity.setCustomerName(e.getFullName());
+				entity.setStatus(e.getStatus());
+				responseBody.add(entity);
+			}
 		});
 
 		return ResponseEntity.status(200).body(responseBody);
