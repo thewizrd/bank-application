@@ -37,8 +37,8 @@ import com.learning.banking.enums.BeneficiaryStatus;
 import com.learning.banking.enums.CustomerStatus;
 import com.learning.banking.enums.TransactionType;
 import com.learning.banking.enums.UserRoles;
-import com.learning.banking.exceptions.IdNotFoundException;
 import com.learning.banking.exceptions.NoDataFoundException;
+import com.learning.banking.exceptions.NoRecordsFoundException;
 import com.learning.banking.exceptions.RolePermissionsException;
 import com.learning.banking.payload.request.ApproveBeneficiaryRequest;
 import com.learning.banking.payload.request.ApprovedAccountRequest;
@@ -59,13 +59,11 @@ import com.learning.banking.security.service.UserDetailsImpl;
 import com.learning.banking.service.AccountService;
 import com.learning.banking.service.BeneficiaryService;
 import com.learning.banking.service.CustomerService;
-import com.learning.banking.service.RoleService;
 import com.learning.banking.service.TransactionService;
 
 @RestController
 @RequestMapping("/api/staff")
 public class StaffController {
-
 	@Autowired
 	private CustomerService customerService;
 
@@ -79,20 +77,16 @@ public class StaffController {
 	private BeneficiaryService beneficiaryService;
 
 	@Autowired
-	private RoleService roleService;
-
-	@Autowired
 	private AuthenticationManager authenticationManager;
 	@Autowired
 	private JwtUtils jwtUtils;
-
-	private Boolean permissonCus = false;
 
 	// Enable or disable the customer, based on that the customer should be able to
 	// login
 	@PutMapping(value = "/customer")
 	@PreAuthorize("hasRole('STAFF')")
-	public ResponseEntity<?> changeCustomerStatus(@Valid @RequestBody CustomerRequest customerRequest) {
+	public ResponseEntity<?> changeCustomerStatus(@Valid @RequestBody CustomerRequest customerRequest)
+			throws NoRecordsFoundException {
 
 		// new comment
 
@@ -101,17 +95,19 @@ public class StaffController {
 		Long customerId = customerRequest.getCustomerId();
 		if (customerService.existsByID(customerId)) {
 			Customer customer = customerService.getCustomerByID(customerId).get();
+			boolean permissonCus = false;
 
-			Set<Role> roles = new HashSet<>();
-			customer.getRoles().forEach(er -> {
+			for (Role er : customer.getRoles()) {
 				if (er.getRoleName().equals(UserRoles.ROLE_CUSTOMER)) {
 					permissonCus = true;
+					break;
 				}
-			});
+			}
+
 			if (permissonCus) {
 				CustomerStatus status = customerRequest.getCustomerStatus();
 				customer.setStatus(status);
-				Customer c = customerService.addCustomer(customer);
+				Customer c = customerService.updateCustomer(customer);
 				CustomerResponseFromStaff customerResponse = new CustomerResponseFromStaff();
 				customerResponse.setId(c.getCustomerID());
 				customerResponse.setFullname(c.getFullName());
@@ -236,8 +232,8 @@ public class StaffController {
 		List<Beneficiary> allBeneficiaries = beneficiaryService.getAllBeneficiaries();
 		List<NonApprovedBeneficiaryResponse> nonApprovedBeneficiaries = new ArrayList<NonApprovedBeneficiaryResponse>();
 		allBeneficiaries.forEach(e -> {
-			NonApprovedBeneficiaryResponse beneficiary = new NonApprovedBeneficiaryResponse();
 			if (!e.isApproved()) {
+				NonApprovedBeneficiaryResponse beneficiary = new NonApprovedBeneficiaryResponse();
 				beneficiary.setBeneficiaryAccountNumber(e.getAccount().getAccountNumber());
 				beneficiary.setDateAdded(e.getAddedDate());
 				beneficiary.setFromCustomer(e.getAccount().getCustomer().getCustomerID());

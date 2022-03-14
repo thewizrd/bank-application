@@ -28,6 +28,7 @@ import com.learning.banking.entity.Role;
 import com.learning.banking.enums.UserRoles;
 import com.learning.banking.exceptions.IdNotFoundException;
 import com.learning.banking.exceptions.NoDataFoundException;
+import com.learning.banking.exceptions.NoRecordsFoundException;
 import com.learning.banking.exceptions.RolePermissionsException;
 import com.learning.banking.exceptions.UserNameAlreadyExistsException;
 import com.learning.banking.payload.request.CreateUserRequest;
@@ -64,8 +65,6 @@ public class AdminController {
 	@Autowired
 	private JwtUtils jwtUtils;
 
-	private Boolean permissonCus = false;
-
 	// To validate the admin is registered in the system,and get jwt
 	@PostMapping(value = "/authenticate")
 	public ResponseEntity<?> authAdmmin(@Valid @RequestBody CustomerRequest customerRequest) {
@@ -101,12 +100,14 @@ public class AdminController {
 			customer.setUsername(userName);
 			String password = passwordEncoder.encode(createUserRequest.getPassword());
 			customer.setPassword(password);
+
 			// set role to staff
 			Set<Role> roles = new HashSet<>();
 
 			Role staffRole = roleService.findByRoleName(UserRoles.ROLE_STAFF)
 					.orElseThrow(() -> new IdNotFoundException("role id not found exception"));
 			roles.add(staffRole);
+			customer.setRoles(roles);
 
 			Customer c = customerService.addCustomer(customer);
 
@@ -146,20 +147,23 @@ public class AdminController {
 	// Enable or disable the staff, based on that the staff should be able to login
 	@PutMapping(value = "/staff")
 	@PreAuthorize("hasRole('ADMIN')")
-	public ResponseEntity<?> updateStaffStatus(@Valid @RequestBody UpdateStaffRequest staff) {
+	public ResponseEntity<?> updateStaffStatus(@Valid @RequestBody UpdateStaffRequest staff) throws NoRecordsFoundException {
 		// TODO: process PUT request
 		Long id = staff.getStaffId();
 		if (customerService.existsByID(id)) {
+			boolean permissonCus = false;
+
 			Customer customer = customerService.getCustomerByID(id).get();
-			Set<Role> roles = new HashSet<>();
-			customer.getRoles().forEach(er -> {
+			for (Role er : customer.getRoles()) {
 				if (er.getRoleName().equals(UserRoles.ROLE_STAFF)) {
 					permissonCus = true;
+					break;
 				}
-			});
+			}
+
 			if (permissonCus) {
 				customer.setStatus(staff.getStatus());
-				Customer cust = customerService.addCustomer(customer);
+				Customer cust = customerService.updateCustomer(customer);
 				StaffRespose staffRespose = new StaffRespose();
 				staffRespose.setStaffId(cust.getCustomerID());
 				staffRespose.setStatus(cust.getStatus());

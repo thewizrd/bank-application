@@ -101,33 +101,34 @@ public class CustomerController {
 	@PostMapping("/register")
 	public ResponseEntity<?> registerCustomer(@Valid @RequestBody CreateUserRequest registerUserRequest) {
 		Set<Role> roles = new HashSet<>();
-		registerUserRequest.getRoles().forEach(e -> {
-			if (registerUserRequest.getRoles() == null) {
-				Role userRole = roleService.findByRoleName(UserRoles.ROLE_CUSTOMER)
-						.orElseThrow(() -> new IdNotFoundException("role id not found exception"));
-				roles.add(userRole);
-			}
-			switch (e) {
-			case "customer":
-				Role userRole = roleService.findByRoleName(UserRoles.ROLE_CUSTOMER)
-						.orElseThrow(() -> new IdNotFoundException("role id not found exception"));
-				roles.add(userRole);
-				break;
-			case "admin":
-				Role adminRole = roleService.findByRoleName(UserRoles.ROLE_ADMIN)
-						.orElseThrow(() -> new IdNotFoundException("role id not found exception"));
-				roles.add(adminRole);
-				break;
-			case "staff":
-				Role staffRole = roleService.findByRoleName(UserRoles.ROLE_STAFF)
-						.orElseThrow(() -> new IdNotFoundException("role id not found exception"));
-				roles.add(staffRole);
-				break;
-			default:
-				break;
-			}
+		if (registerUserRequest.getRoles() == null) {
+			Role userRole = roleService.findByRoleName(UserRoles.ROLE_CUSTOMER)
+					.orElseThrow(() -> new IdNotFoundException("role id not found exception"));
+			roles.add(userRole);
+		} else {
+			registerUserRequest.getRoles().forEach(e -> {
+				switch (e) {
+				case "customer":
+					Role userRole = roleService.findByRoleName(UserRoles.ROLE_CUSTOMER)
+							.orElseThrow(() -> new IdNotFoundException("role id not found exception"));
+					roles.add(userRole);
+					break;
+				case "admin":
+					Role adminRole = roleService.findByRoleName(UserRoles.ROLE_ADMIN)
+							.orElseThrow(() -> new IdNotFoundException("role id not found exception"));
+					roles.add(adminRole);
+					break;
+				case "staff":
+					Role staffRole = roleService.findByRoleName(UserRoles.ROLE_STAFF)
+							.orElseThrow(() -> new IdNotFoundException("role id not found exception"));
+					roles.add(staffRole);
+					break;
+				default:
+					break;
+				}
 
-		});
+			});
+		}
 
 		Customer customer = new Customer();
 		customer.setFullName(registerUserRequest.getFirstName(), registerUserRequest.getLastName());
@@ -194,8 +195,7 @@ public class CustomerController {
 	}
 
 	/**
-	 * 4
-	 * Role: Staff To approve the account which is create by customer
+	 * 4 Role: Staff To approve the account which is create by customer
 	 */
 	@PutMapping("/{customerID}/account/{accountNumber}")
 	@PreAuthorize("hasRole('STAFF')")
@@ -225,9 +225,8 @@ public class CustomerController {
 	}
 
 	/**
-	 * 5
-	 * To get all the accounts which are opened by the customer the end point should
-	 * return an array of account, balance, and type, and status.
+	 * 5 To get all the accounts which are opened by the customer the end point
+	 * should return an array of account, balance, and type, and status.
 	 * 
 	 * @return
 	 * @throws NoRecordsFoundException
@@ -400,14 +399,24 @@ public class CustomerController {
 		/*
 		 * Transfer flow
 		 * 
-		 * 1. Retrieve Accounts matching account numbers (fromAccount and toAccount) 1a.
-		 * Throw exception if accounts can't be found 2. Retrieve Customer object who
-		 * initiated request (using by [ID] from request) 3. Check if account
-		 * (fromAccount) has enough funds to deduct from 3a. If funds not available
-		 * throw exception (InsufficientFundsException?) 4. Deduct amount from
-		 * "fromAccount" and add to "toAccount" 5. Create 2 separate Transaction entries
-		 * and add to both accounts 6. Save both entities using @Transaction 7. Return
-		 * payload
+		 * 1. Retrieve Accounts matching account numbers (fromAccount and toAccount)
+		 * 
+		 * 1a. Throw exception if accounts can't be found
+		 * 
+		 * 2. Retrieve Customer object who initiated request (using by [ID] from
+		 * request)
+		 * 
+		 * 3. Check if account (fromAccount) has enough funds to deduct from
+		 * 
+		 * 3a. If funds not available throw exception (InsufficientFundsException?)
+		 * 
+		 * 4. Deduct amount from "fromAccount" and add to "toAccount"
+		 * 
+		 * 5. Create 2 separate Transaction entries and add to both accounts
+		 * 
+		 * 6. Save both entities using @Transaction
+		 * 
+		 * 7. Return payload
 		 */
 
 		// 1. Retrieve accounts
