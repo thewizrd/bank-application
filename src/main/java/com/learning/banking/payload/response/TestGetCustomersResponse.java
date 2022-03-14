@@ -18,13 +18,13 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class StaffGetCustomersResponse {
+public class TestGetCustomersResponse {
 	private long customerId;
 	private String customerName;
 	private CustomerStatus status;
 	private LocalDate created;
 	
-	public StaffGetCustomersResponse(Customer customer) {
+	public TestGetCustomersResponse(Customer customer) {
 		this.customerId = customer.getCustomerID();
 		this.customerName = customer.getFullName();
 		this.status = customer.getStatus();

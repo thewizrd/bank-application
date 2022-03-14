@@ -24,7 +24,7 @@ import com.learning.banking.enums.AccountType;
 import com.learning.banking.enums.BeneficiaryStatus;
 import com.learning.banking.enums.CustomerStatus;
 import com.learning.banking.enums.UserRoles;
-import com.learning.banking.payload.response.StaffGetCustomersResponse;
+import com.learning.banking.payload.response.TestGetCustomersResponse;
 import com.learning.banking.payload.response.TestCustomerResponse;
 import com.learning.banking.repo.CustomerRepository;
 import com.learning.banking.repo.RoleRepository;
@@ -73,7 +73,7 @@ public class TestController {
 		admin.setStatus(CustomerStatus.ENABLED);
 
 		Customer updated = customerRepo.save(admin);
-		return ResponseEntity.ok(new StaffGetCustomersResponse(updated));
+		return ResponseEntity.ok(new TestGetCustomersResponse(updated));
 	}
 
 	@PutMapping("/addStaff")
@@ -91,7 +91,7 @@ public class TestController {
 		admin.setStatus(CustomerStatus.ENABLED);
 
 		Customer updated = customerRepo.save(admin);
-		return ResponseEntity.ok(new StaffGetCustomersResponse(updated));
+		return ResponseEntity.ok(new TestGetCustomersResponse(updated));
 	}
 
 	@PutMapping("/addStuff")
