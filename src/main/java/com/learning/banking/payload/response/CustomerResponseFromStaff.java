@@ -1,6 +1,7 @@
 package com.learning.banking.payload.response;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -22,5 +23,5 @@ public class CustomerResponseFromStaff {
 	private String fullname;
 	@Enumerated(EnumType.STRING)
 	private CustomerStatus customerStatus;
-	private LocalDate createDate;
+	private LocalDateTime createDate;
 }

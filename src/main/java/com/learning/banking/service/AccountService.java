@@ -20,4 +20,8 @@ public interface AccountService {
 	
 	boolean existsByAccountNumber(Long accountNumber);
 	Optional<Account> findAccountByAccountNumber(Long accountNumber);
+	
+	List<Account> findAccountsByCustomerCustomerID(Long id);
+
+  Account addAccount(Account account);
 }

@@ -14,5 +14,5 @@ import lombok.Data;
 public class StaffApproveAccountResponse {
 	@Positive
 	private long accountNumber;
-	private boolean approved;
+	private String approved;
 }

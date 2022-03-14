@@ -31,11 +31,15 @@ import org.springframework.web.bind.annotation.RestController;
 import com.learning.banking.entity.Account;
 import com.learning.banking.entity.Beneficiary;
 import com.learning.banking.entity.Customer;
+import com.learning.banking.entity.Role;
 import com.learning.banking.entity.Transaction;
 import com.learning.banking.enums.BeneficiaryStatus;
 import com.learning.banking.enums.CustomerStatus;
 import com.learning.banking.enums.TransactionType;
+import com.learning.banking.enums.UserRoles;
+import com.learning.banking.exceptions.IdNotFoundException;
 import com.learning.banking.exceptions.NoDataFoundException;
+import com.learning.banking.exceptions.RolePermissionsException;
 import com.learning.banking.payload.request.ApproveBeneficiaryRequest;
 import com.learning.banking.payload.request.ApprovedAccountRequest;
 import com.learning.banking.payload.request.CustomerRequest;
@@ -55,6 +59,7 @@ import com.learning.banking.security.service.UserDetailsImpl;
 import com.learning.banking.service.AccountService;
 import com.learning.banking.service.BeneficiaryService;
 import com.learning.banking.service.CustomerService;
+import com.learning.banking.service.RoleService;
 import com.learning.banking.service.TransactionService;
 
 @RestController
@@ -74,32 +79,54 @@ public class StaffController {
 	private BeneficiaryService beneficiaryService;
 	
 	@Autowired
+	private RoleService roleService;
+	
+	@Autowired
 	private AuthenticationManager authenticationManager;
 	@Autowired
 	private JwtUtils jwtUtils;
 
+	private Boolean permissonCus = false;
+	
 	// Enable or disable the customer, based on that the customer should be able to
 	// login
 	@PutMapping(value = "/customer")
 	@PreAuthorize("hasRole('STAFF')")
 	public ResponseEntity<?> changeCustomerStatus(@Valid @RequestBody CustomerRequest customerRequest) {
 
+		//new comment
+		
 		// customer should be able to login
+		
 		Long customerId = customerRequest.getCustomerId();
 		if (customerService.existsByID(customerId)) {
 			Customer customer = customerService.getCustomerByID(customerId).get();
-			CustomerStatus status = customerRequest.getCustomerStatus();
-			customer.setStatus(status);
-			Customer c = customerService.addCustomer(customer);
-			CustomerResponseFromStaff customerResponse = new CustomerResponseFromStaff();
-			customerResponse.setId(c.getCustomerID());
-			customerResponse.setFullname(c.getFullName());
-			customerResponse.setCustomerStatus(c.getStatus());
-			customerResponse.setCreateDate(c.getDateCreated().toLocalDate());
-			return ResponseEntity.status(200).body(customerResponse);
+			
+			Set<Role> roles = new HashSet<>();
+			customer.getRoles().forEach(er -> {
+				if(er.getRoleName().equals(UserRoles.ROLE_CUSTOMER)) {
+						permissonCus = true;				
+				}
+			});
+			if(permissonCus) {
+				CustomerStatus status = customerRequest.getCustomerStatus();
+				customer.setStatus(status);
+				Customer c = customerService.addCustomer(customer);
+				CustomerResponseFromStaff customerResponse = new CustomerResponseFromStaff();
+				customerResponse.setId(c.getCustomerID());
+				customerResponse.setFullname(c.getFullName());
+				customerResponse.setCustomerStatus(c.getStatus());
+				customerResponse.setCreateDate(c.getDateCreated());
+				customerResponse.setUsername(c.getUsername());	
+				return ResponseEntity.status(200).body(customerResponse);
+			}else {
+				throw new RolePermissionsException("No permissions");
+			}
+			
 		} else {
 			throw new NoDataFoundException("Customer status not changed");
 		}
+		
 
 	}
 
@@ -113,7 +140,8 @@ public class StaffController {
 		customerResponse.setId(customer.getCustomerID());
 		customerResponse.setFullname(customer.getFullName());
 		customerResponse.setCustomerStatus(customer.getStatus());
-		customerResponse.setCreateDate(customer.getDateCreated().toLocalDate());
+		customerResponse.setCreateDate(customer.getDateCreated());
+		customerResponse.setUsername(customer.getUsername());
 		return ResponseEntity.status(200).body(customerResponse);
 	}
 

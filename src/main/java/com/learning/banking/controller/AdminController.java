@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.naming.NoPermissionException;
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,7 @@ import com.learning.banking.entity.Role;
 import com.learning.banking.enums.UserRoles;
 import com.learning.banking.exceptions.IdNotFoundException;
 import com.learning.banking.exceptions.NoDataFoundException;
+import com.learning.banking.exceptions.RolePermissionsException;
 import com.learning.banking.exceptions.UserNameAlreadyExistsException;
 import com.learning.banking.payload.request.CreateUserRequest;
 import com.learning.banking.payload.request.CustomerRequest;
@@ -38,7 +40,11 @@ import com.learning.banking.security.jwt.JwtUtils;
 import com.learning.banking.security.service.UserDetailsImpl;
 import com.learning.banking.service.CustomerService;
 import com.learning.banking.service.RoleService;
-
+/**
+ * 
+ * @author Dan
+ *
+ */
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {
@@ -57,6 +63,8 @@ public class AdminController {
 
 	@Autowired
 	private JwtUtils jwtUtils;
+	
+	private Boolean permissonCus = false;
 
 	// To validate the admin is registered in the system,and get jwt
 	@PostMapping(value = "/authenticate")
@@ -143,12 +151,24 @@ public class AdminController {
 		Long id = staff.getStaffId();
 		if (customerService.existsByID(id)) {
 			Customer customer = customerService.getCustomerByID(id).get();
-			customer.setStatus(staff.getStatus());
-			Customer cust = customerService.addCustomer(customer);
-			StaffRespose staffRespose = new StaffRespose();
-			staffRespose.setStaffId(cust.getCustomerID());
-			staffRespose.setStatus(cust.getStatus());
-			return ResponseEntity.ok(staffRespose);
+			Set<Role> roles = new HashSet<>();
+			customer.getRoles().forEach(er -> {
+				if(er.getRoleName().equals(UserRoles.ROLE_STAFF)) {
+						permissonCus = true;				
+				}
+			});
+			if(permissonCus) {
+				customer.setStatus(staff.getStatus());
+				Customer cust = customerService.addCustomer(customer);
+				StaffRespose staffRespose = new StaffRespose();
+				staffRespose.setStaffId(cust.getCustomerID());
+				staffRespose.setStatus(cust.getStatus());
+				staffRespose.setStaffName(cust.getFullName());
+				return ResponseEntity.ok(staffRespose);
+			}else {
+				throw new RolePermissionsException("No role permission");
+			}
+			
 
 		} else {
 			throw new NoDataFoundException("Staff status not changed");

@@ -16,5 +16,5 @@ public class ApproveAccountRequest {
 	@Positive
 	@NotNull
 	private Long accountNumber;
-	private boolean approved;
+	private String approved;
 }
