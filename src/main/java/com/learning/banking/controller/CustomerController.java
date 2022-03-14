@@ -61,6 +61,7 @@ import com.learning.banking.payload.response.ApiMessage;
 import com.learning.banking.payload.response.BeneficiaryResponse;
 import com.learning.banking.payload.response.CreateAccountResponse;
 import com.learning.banking.payload.response.CustomerResponse;
+import com.learning.banking.payload.response.RegisterCustomerResponse;
 import com.learning.banking.payload.response.GetCustomerQandAResponse;
 import com.learning.banking.payload.response.JwtResponse;
 import com.learning.banking.payload.response.StaffApproveAccountResponse;
@@ -96,6 +97,10 @@ public class CustomerController {
 
 	@Autowired
 	private JwtUtils jwtUtils;
+	
+	private Authentication getAuthentication() {
+		return SecurityContextHolder.getContext().getAuthentication();
+	}
 
 	// 1
 	@PostMapping("/register")
@@ -149,7 +154,7 @@ public class CustomerController {
 		customer.setRoles(roles);
 		Customer c = customerService.addCustomer(customer);
 
-		CustomerResponse cr = new CustomerResponse();
+		RegisterCustomerResponse cr = new RegisterCustomerResponse();
 		cr.setId(c.getCustomerID());
 		cr.setUsername(c.getUsername());
 		cr.setFirstName(c.getFirstName());
@@ -169,15 +174,15 @@ public class CustomerController {
 		UserDetailsImpl userDetailsImpl = (UserDetailsImpl) authentication.getPrincipal();
 		List<String> roles = userDetailsImpl.getAuthorities().stream().map(e -> e.getAuthority())
 				.collect(Collectors.toList());
-		
+
 		return ResponseEntity.ok(new JwtResponse(jwt, userDetailsImpl.getId(), userDetailsImpl.getUsername(), roles));
 	}
 
 	// 3
 	@PreAuthorize("hasRole('CUSTOMER')")
-	@PostMapping("/:{customerId}/account")
-	public ResponseEntity<?> registerAccount(@PathVariable Long customerId, @RequestBody CreateAccountRequest request)
-			throws NoRecordsFoundException {
+	@PostMapping("/{customerId}/account")
+	public ResponseEntity<?> registerAccount(@PathVariable Long customerId,
+			@Valid @RequestBody CreateAccountRequest request) throws NoRecordsFoundException {
 		Account account = new Account();
 		account.setCustomer(customerService.getCustomerByID(customerId)
 				.orElseThrow(() -> new NoRecordsFoundException("Customer with ID: " + customerId + " not found")));
@@ -198,18 +203,30 @@ public class CustomerController {
 	 */
 	@PutMapping("/{customerID}/account/{accountNumber}")
 	@PreAuthorize("hasRole('STAFF')")
-	public ResponseEntity<?> approveTheCustomerAccount(@RequestBody ApproveAccountRequest request)
-			throws NoRecordsFoundException {
+	public ResponseEntity<?> approveTheCustomerAccount(@PathVariable Long customerID, @PathVariable Long accountNumber,
+			@RequestBody ApproveAccountRequest request) throws NoRecordsFoundException {
 		// Check if account exists in database
 		Long accountNum = request.getAccountNumber();
 		if (accountService.existsByAccountNumber(accountNum)) {
+			// Get Staff details
+			Authentication authentication = getAuthentication();
+			UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+			final Customer approver = customerService.getCustomerByID(userDetails.getId()).orElseThrow(() ->{
+				return new NoRecordsFoundException("Customer with ID: " + customerID + " not found");
+			});
+
 			Account account = accountService.findAccountByAccountNumber(accountNum).get();
 			if (request.getApproved().equalsIgnoreCase("yes")) {
 				account.setApproved(true);
+				account.setAccountStatus(AccountStatus.ENABLED);
 			} else {
 				account.setApproved(false);
+				account.setAccountStatus(AccountStatus.DISABLED);
 			}
+			account.setApprovedBy(approver);
+			
 			account = accountService.updateAccount(account);
+
 			StaffApproveAccountResponse accountResponse = new StaffApproveAccountResponse();
 			accountResponse.setAccountNumber(account.getAccountNumber());
 			if (account.isApproved() == true) {

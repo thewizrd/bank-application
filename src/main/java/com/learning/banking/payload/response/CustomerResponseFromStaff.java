@@ -6,6 +6,8 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.validation.constraints.NotBlank;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonFormat.Shape;
 import com.learning.banking.enums.CustomerStatus;
 
 import lombok.AllArgsConstructor;
@@ -22,5 +24,6 @@ public class CustomerResponseFromStaff {
 	private String fullname;
 	@Enumerated(EnumType.STRING)
 	private CustomerStatus customerStatus;
+	@JsonFormat(shape = Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
 	private LocalDateTime createDate;
 }
