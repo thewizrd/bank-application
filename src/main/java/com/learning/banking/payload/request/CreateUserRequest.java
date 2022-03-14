@@ -33,5 +33,6 @@ public class CreateUserRequest {
 	private String secretQuestion;
 	@NotBlank
 	private String secretAnswer;
+	@NotEmpty
 	private Set<String> roles;
 }

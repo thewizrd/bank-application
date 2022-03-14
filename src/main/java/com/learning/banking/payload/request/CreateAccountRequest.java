@@ -27,5 +27,4 @@ public class CreateAccountRequest {
 	private BigDecimal accountBalance;
 	
 	private boolean approved = false;
-	
 }

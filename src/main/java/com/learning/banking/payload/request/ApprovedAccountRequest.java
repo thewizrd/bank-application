@@ -1,5 +1,7 @@
 package com.learning.banking.payload.request;
 
+import javax.validation.constraints.NotBlank;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,6 +10,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ApprovedAccountRequest {
+	@NotBlank
 	private String username;
+	@NotBlank
 	private String approved;
 }
