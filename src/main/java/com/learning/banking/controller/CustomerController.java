@@ -174,6 +174,7 @@ public class CustomerController {
 	}
 
 	// 3
+	@PreAuthorize("hasRole('CUSTOMER')")
 	@PostMapping("/:{customerId}/account")
 	public ResponseEntity<?> registerAccount(@PathVariable Long customerId, @RequestBody CreateAccountRequest request)
 			throws NoRecordsFoundException {
@@ -219,7 +220,6 @@ public class CustomerController {
 			}
 			return ResponseEntity.ok(accountResponse);
 		} else {
-
 			throw new NoDataFoundException("Please check Account Number");
 		}
 	}
@@ -232,7 +232,7 @@ public class CustomerController {
 	 * @return
 	 * @throws NoRecordsFoundException
 	 */
-
+	@PreAuthorize("hasRole('CUSTOMER')")
 	@GetMapping("/{customerID}/account")
 	public ResponseEntity<?> getCustomerAccounts(@PathVariable("customerID") Long id) throws NoRecordsFoundException {
 		// Check if customer exists in database
@@ -253,10 +253,10 @@ public class CustomerController {
 		} else {
 			throw new NoDataFoundException("No customer data found");
 		}
-
 	}
 
 	// 6
+	@PreAuthorize("hasRole('CUSTOMER')")
 	@GetMapping("/{customerID}")
 	public ResponseEntity<?> getCustomerByID(@PathVariable Long customerID) throws NoRecordsFoundException {
 		// Check if customer exists in database

@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.naming.NoPermissionException;
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +39,7 @@ import com.learning.banking.security.jwt.JwtUtils;
 import com.learning.banking.security.service.UserDetailsImpl;
 import com.learning.banking.service.CustomerService;
 import com.learning.banking.service.RoleService;
+
 /**
  * 
  * @author Dan
@@ -63,7 +63,7 @@ public class AdminController {
 
 	@Autowired
 	private JwtUtils jwtUtils;
-	
+
 	private Boolean permissonCus = false;
 
 	// To validate the admin is registered in the system,and get jwt
@@ -153,11 +153,11 @@ public class AdminController {
 			Customer customer = customerService.getCustomerByID(id).get();
 			Set<Role> roles = new HashSet<>();
 			customer.getRoles().forEach(er -> {
-				if(er.getRoleName().equals(UserRoles.ROLE_STAFF)) {
-						permissonCus = true;				
+				if (er.getRoleName().equals(UserRoles.ROLE_STAFF)) {
+					permissonCus = true;
 				}
 			});
-			if(permissonCus) {
+			if (permissonCus) {
 				customer.setStatus(staff.getStatus());
 				Customer cust = customerService.addCustomer(customer);
 				StaffRespose staffRespose = new StaffRespose();
@@ -165,15 +165,12 @@ public class AdminController {
 				staffRespose.setStatus(cust.getStatus());
 				staffRespose.setStaffName(cust.getFullName());
 				return ResponseEntity.ok(staffRespose);
-			}else {
+			} else {
 				throw new RolePermissionsException("No role permission");
 			}
-			
 
 		} else {
 			throw new NoDataFoundException("Staff status not changed");
 		}
-
 	}
-
 }
