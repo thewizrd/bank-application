@@ -108,11 +108,6 @@ public class CustomerController {
 		} else {
 			registerUserRequest.getRoles().forEach(e -> {
 				switch (e) {
-				case "customer":
-					Role userRole = roleService.findByRoleName(UserRoles.ROLE_CUSTOMER)
-							.orElseThrow(() -> new IdNotFoundException("role id not found exception"));
-					roles.add(userRole);
-					break;
 				case "admin":
 					Role adminRole = roleService.findByRoleName(UserRoles.ROLE_ADMIN)
 							.orElseThrow(() -> new IdNotFoundException("role id not found exception"));
@@ -123,7 +118,11 @@ public class CustomerController {
 							.orElseThrow(() -> new IdNotFoundException("role id not found exception"));
 					roles.add(staffRole);
 					break;
-				default:
+				default: // default role will be customer
+				case "customer":
+					Role userRole = roleService.findByRoleName(UserRoles.ROLE_CUSTOMER)
+							.orElseThrow(() -> new IdNotFoundException("role id not found exception"));
+					roles.add(userRole);
 					break;
 				}
 
@@ -167,11 +166,11 @@ public class CustomerController {
 		SecurityContextHolder.getContext().setAuthentication(authentication);
 		String jwt = jwtUtils.generateToken(authentication);
 
-		UserDetailsImpl staffDetailsImpl = (UserDetailsImpl) authentication.getPrincipal();
-		List<String> roles = staffDetailsImpl.getAuthorities().stream().map(e -> e.getAuthority())
+		UserDetailsImpl userDetailsImpl = (UserDetailsImpl) authentication.getPrincipal();
+		List<String> roles = userDetailsImpl.getAuthorities().stream().map(e -> e.getAuthority())
 				.collect(Collectors.toList());
-
-		return ResponseEntity.ok(new JwtResponse(jwt, staffDetailsImpl.getId(), staffDetailsImpl.getUsername(), roles));
+		
+		return ResponseEntity.ok(new JwtResponse(jwt, userDetailsImpl.getId(), userDetailsImpl.getUsername(), roles));
 	}
 
 	// 3
