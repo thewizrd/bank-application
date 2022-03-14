@@ -89,6 +89,8 @@ public class CustomerController {
 	private CustomerService customerService;
 	@Autowired
 	private AccountService accountService;
+	@Autowired
+	private RoleService roleService;
 
 	@Autowired
 	private PasswordEncoder passwordEncoder;
@@ -140,7 +142,8 @@ public class CustomerController {
 		customer.setUsername(registerUserRequest.getUsername());
 		String password = passwordEncoder.encode(registerUserRequest.getPassword());
 		customer.setPassword(password);
-		customer.setAadhar(registerUserRequest.getAadhar());
+
+    customer.setAadhar(registerUserRequest.getAadhar());
 		customer.setDateCreated(LocalDateTime.now());
 		customer.setFirstName(registerUserRequest.getFirstName());
 		customer.setLastName(registerUserRequest.getLastName());
@@ -200,6 +203,8 @@ public class CustomerController {
 		return ResponseEntity.status(200).body(response);
 	}
 
+	// 8
+	@PreAuthorize("hasRole('CUSTOMER')")
 	@GetMapping("/{customerID}/account/{accountID}")
 	public ResponseEntity<?> getCustomerAccountByID(@PathVariable Long customerID, @PathVariable Long accountID)
 			throws NoRecordsFoundException {
@@ -219,6 +224,8 @@ public class CustomerController {
 		return ResponseEntity.status(HttpStatus.OK).body(new AccountDetailsResponse(account));
 	}
 
+	// 9
+	@PreAuthorize("hasRole('CUSTOMER')")
 	@PostMapping("/{customerID}/beneficiary")
 	public ResponseEntity<?> addBeneficiaryToCustomer(@PathVariable Long customerID,
 			@Valid @RequestBody AddBeneficiaryRequest request) throws NoRecordsFoundException {
@@ -258,6 +265,8 @@ public class CustomerController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(new AddBeneficiaryResponse(addedBeneficiary));
 	}
 
+	// 10
+	@PreAuthorize("hasRole('CUSTOMER')")
 	@GetMapping("/{customerID}/beneficiary")
 	public ResponseEntity<?> getBeneficiariesForCustomer(@PathVariable Long customerID) throws NoRecordsFoundException {
 		// Check if customer exists in database
@@ -274,6 +283,8 @@ public class CustomerController {
 		return ResponseEntity.status(HttpStatus.OK).body(beneficiariesReponseList);
 	}
 
+	// 11
+	@PreAuthorize("hasRole('CUSTOMER')")
 	@DeleteMapping("/{customerID}/beneficiary/{beneficiaryID}")
 	public ResponseEntity<?> deleteBeneficiaryFromCustomer(@PathVariable Long customerID,
 			@PathVariable Long beneficiaryID) throws NoRecordsFoundException {
@@ -295,6 +306,8 @@ public class CustomerController {
 		}
 	}
 
+	// 12
+	@PreAuthorize("hasRole('CUSTOMER')")
 	@PutMapping("/transfer")
 	public ResponseEntity<?> accountTransferByCustomer(@Valid @RequestBody TransferRequest request)
 			throws NoRecordsFoundException, InsufficientFundsException {
@@ -345,9 +358,10 @@ public class CustomerController {
 		Transaction fromTransaction = new Transaction();
 		fromTransaction.setDate(now);
 		fromTransaction.setReference(request.getReason());
-		fromTransaction.setAmount(request.getAmount());
+		fromTransaction.setAmount(request.getAmount().negate());
 		fromTransaction.setTransactionType(TransactionType.DEBIT); // TODO: add to request?
 		fromTransaction.setInitiatedBy(initiatedBy);
+		fromTransaction.setAccount(fromAccount);
 		// 5a. Add to list
 		fromAccount.getTransactions().add(fromTransaction);
 
@@ -357,6 +371,7 @@ public class CustomerController {
 		toTransaction.setAmount(request.getAmount());
 		toTransaction.setTransactionType(TransactionType.DEBIT); // TODO: add to request?
 		toTransaction.setInitiatedBy(initiatedBy);
+		toTransaction.setAccount(toAccount);
 		// 5a. Add to list
 		toAccount.getTransactions().add(toTransaction);
 
@@ -374,6 +389,8 @@ public class CustomerController {
 		return ResponseEntity.ok(response);
 	}
 
+	// 13
+	@PreAuthorize("hasRole('CUSTOMER')")
 	@GetMapping("/{username}/forgot/question/answer")
 	public ResponseEntity<?> getCustomerSecurityQandA(@PathVariable String username) throws NoRecordsFoundException {
 		// Check if customer exists in database
@@ -385,6 +402,8 @@ public class CustomerController {
 				.ok(new GetCustomerQandAResponse(customer.getSecretQuestion(), customer.getSecretAnswer()));
 	}
 
+	// 14
+	@PreAuthorize("hasRole('CUSTOMER')")
 	@PutMapping("/{username}/forgot")
 	public ResponseEntity<?> updateForgottenPassword(@PathVariable String username,
 			@Valid @RequestBody ResetPasswordRequest request) throws NoRecordsFoundException {

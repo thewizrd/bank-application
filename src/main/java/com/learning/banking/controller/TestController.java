@@ -42,22 +42,22 @@ public class TestController {
 	private CustomerRepository customerRepo;
 	@Autowired
 	private RoleRepository roleRepo;
-	
+
 	@Autowired
 	private PasswordEncoder passwordEncoder;
-	
+
 	@PutMapping("/addRoles")
 	public ResponseEntity<?> addRoles() {
 		// Add roles
 		for (UserRoles role : UserRoles.values()) {
 			roleRepo.save(new Role(role));
 		}
-		
+
 		List<Role> roles = roleRepo.findAll();
-		
+
 		return ResponseEntity.ok(roles);
 	}
-	
+
 	@PutMapping("/addAdmin")
 	public ResponseEntity<?> addAdmin() {
 		Customer admin = new Customer();
@@ -74,7 +74,8 @@ public class TestController {
 
 		Customer updated = customerRepo.save(admin);
 		return ResponseEntity.ok(new StaffGetCustomersResponse(updated));
-}
+	}
+
 	@PutMapping("/addStaff")
 	public ResponseEntity<?> addStaff() {
 		Customer admin = new Customer();
@@ -91,7 +92,7 @@ public class TestController {
 
 		Customer updated = customerRepo.save(admin);
 		return ResponseEntity.ok(new StaffGetCustomersResponse(updated));
-}
+  }
 	
 	@PutMapping("/addStuff")
 	public ResponseEntity<?> addStuff() {
@@ -107,7 +108,7 @@ public class TestController {
 		customer1.setPhone("111-111-1111");
 		customer1.setDateCreated(LocalDateTime.now());
 		customer1.setStatus(CustomerStatus.ENABLED);
-		
+
 		Account account1 = new Account();
 		account1.setAccountType(AccountType.CHECKING);
 		account1.setApproved(true);
@@ -115,9 +116,9 @@ public class TestController {
 		account1.setDateOfCreation(LocalDateTime.now());
 		account1.setAccountStatus(AccountStatus.ENABLED);
 		account1.setCustomer(customer1);
-		
+
 		customer1.getAccounts().add(account1);
-		
+
 		// Customer 2
 		Customer customer2 = new Customer();
 		customer2.setFirstName("Steve");
@@ -130,7 +131,7 @@ public class TestController {
 		customer2.setPhone("222-222-2222");
 		customer2.setDateCreated(LocalDateTime.now());
 		customer2.setStatus(CustomerStatus.ENABLED);
-		
+
 		Account account2 = new Account();
 		account2.setAccountType(AccountType.CHECKING);
 		account2.setApproved(true);
@@ -138,9 +139,9 @@ public class TestController {
 		account2.setDateOfCreation(LocalDateTime.now());
 		account2.setAccountStatus(AccountStatus.ENABLED);
 		account2.setCustomer(customer2);
-		
+
 		customer2.getAccounts().add(account2);
-		
+
 		// Add beneficiaries
 		Beneficiary benefit1 = new Beneficiary(account2, customer1);
 		benefit1.setAddedDate(LocalDate.now());
@@ -155,16 +156,15 @@ public class TestController {
 		customer2.getBeneficiaries().add(benefit2);
 
 		List<Customer> updated = customerRepo.saveAll(Arrays.asList(customer1, customer2));
-		
-		List<StaffGetCustomersResponse> responseBody = updated.stream().map(c -> {
-			return new StaffGetCustomersResponse(c);
+
+		List<TestCustomerResponse> responseBody = updated.stream().map(c -> {
+			return new TestCustomerResponse(c);
 		}).collect(Collectors.toList());
-		
+
 		return ResponseEntity.ok(responseBody);
 	}
-	
-	
-	@GetMapping("/customers")
+
+  @GetMapping("/customers")
 	public ResponseEntity<?> getCustomers() {
 		List<Customer> customers = customerRepo.findAll();
 		return ResponseEntity.ok(customers.stream().map(c -> {
