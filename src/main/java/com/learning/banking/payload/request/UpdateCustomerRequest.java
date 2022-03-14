@@ -18,9 +18,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UpdateCustomerRequest {
-	@Positive
-	@NotNull
-	private Long customerId;
 	@NotBlank
 	private String firstName;
 	@NotBlank
