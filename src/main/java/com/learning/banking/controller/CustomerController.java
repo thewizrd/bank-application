@@ -6,6 +6,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -18,6 +19,7 @@ import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -49,6 +51,7 @@ import com.learning.banking.exceptions.InsufficientFundsException;
 import com.learning.banking.exceptions.NoDataFoundException;
 import com.learning.banking.exceptions.NoRecordsFoundException;
 import com.learning.banking.payload.request.AddBeneficiaryRequest;
+import com.learning.banking.payload.request.ApproveAccountRequest;
 import com.learning.banking.payload.request.CreateAccountRequest;
 import com.learning.banking.payload.request.CreateUserRequest;
 import com.learning.banking.payload.request.ResetPasswordRequest;
@@ -56,11 +59,14 @@ import com.learning.banking.payload.request.SignInRequest;
 import com.learning.banking.payload.request.TransferRequest;
 import com.learning.banking.payload.response.AccountDetailsResponse;
 import com.learning.banking.payload.response.AddBeneficiaryResponse;
+import com.learning.banking.payload.response.AllAccountsResponse;
 import com.learning.banking.payload.response.ApiMessage;
+import com.learning.banking.payload.response.ApprovedAccountResponse;
 import com.learning.banking.payload.response.BeneficiaryResponse;
 import com.learning.banking.payload.response.CreateAccountResponse;
 import com.learning.banking.payload.response.CustomerResponse;
 import com.learning.banking.payload.response.GetCustomerQandAResponse;
+import com.learning.banking.payload.response.StaffApproveAccountResponse;
 import com.learning.banking.payload.response.JwtResponse;
 import com.learning.banking.payload.response.TransferResponse;
 import com.learning.banking.security.jwt.JwtUtils;
@@ -86,7 +92,7 @@ public class CustomerController {
 
 	@Autowired
 	private PasswordEncoder passwordEncoder;
-	
+
 	@Autowired
 	private RoleService roleService;
 	
@@ -144,8 +150,6 @@ public class CustomerController {
 		customer.setSecretAnswer(registerUserRequest.getSecretAnswer());
 		customer.setStatus(CustomerStatus.ENABLED);
 		
-		
-
 		// set role to customer
 		customer.setRoles(roles);
 		Customer c = customerService.addCustomer(customer);
@@ -401,5 +405,66 @@ public class CustomerController {
 			return ResponseEntity.ok(new ApiMessage("Password updated successfully"));
 		}
 	}
-	
+
+	/**
+	 * Role: Staff To approve the account which is create by customer
+	 */
+	@PutMapping("/{customerID}/account/{accountNumber}")
+	@PreAuthorize("hasRole('STAFF')")
+	public ResponseEntity<?> approveTheCustomerAccount(@RequestBody ApproveAccountRequest request)
+			throws NoRecordsFoundException {
+		// Check if account exists in database
+		Long accountNum = request.getAccountNumber();
+		if (accountService.existsByAccountNumber(accountNum)) {
+			Account account = accountService.findAccountByAccountNumber(accountNum).get();
+			if (request.getApproved().equalsIgnoreCase("yes")) {
+				account.setApproved(true);
+			} else {
+				account.setApproved(false);
+			}
+			account = accountService.updateAccount(account);
+			StaffApproveAccountResponse accountResponse = new StaffApproveAccountResponse();
+			accountResponse.setAccountNumber(account.getAccountNumber());
+			if (account.isApproved() == true) {
+				accountResponse.setApproved("yes");
+			} else {
+				accountResponse.setApproved("no");
+			}
+			return ResponseEntity.ok(accountResponse);
+		} else {
+
+			throw new NoDataFoundException("Please check Account Number");
+		}
+	}
+
+	/**
+	 * To get all the accounts which are opened by the customer the end point should
+	 * return an array of account, balance, and type, and status.
+	 * 
+	 * @return
+	 * @throws NoRecordsFoundException
+	 */
+
+	@GetMapping("/{customerID}/account")
+	public ResponseEntity<?> getCustomerAccounts(@PathVariable("customerID") Long id) throws NoRecordsFoundException {
+		// Check if customer exists in database
+		System.out.println("start");
+		if (customerService.existsByID(id)) {
+			List<Account> accounts = accountService.findAccountsByCustomerCustomerID(id);
+			List<AllAccountsResponse> accountsResponses = new ArrayList<>();
+			accounts.forEach(a -> {
+				AllAccountsResponse account = new AllAccountsResponse();
+				account.setAccountNumber(a.getAccountNumber());
+				account.setAccountBalance(a.getAccountBalance());
+				account.setAccountStatus(a.getAccountStatus());
+				account.setAccountType(a.getAccountType());
+				accountsResponses.add(account);
+			});
+
+			return ResponseEntity.ok(accountsResponses);
+		} else {
+			throw new NoDataFoundException("No customer data found");
+		}
+
+	}
 }
