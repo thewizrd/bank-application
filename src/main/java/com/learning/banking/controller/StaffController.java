@@ -85,112 +85,6 @@ public class StaffController {
 		return SecurityContextHolder.getContext().getAuthentication();
 	}
 
-	// 22
-	// Enable or disable the customer, based on that the customer should be able to
-	// login
-	@PutMapping(value = "/customer")
-	@PreAuthorize("hasRole('STAFF')")
-	public ResponseEntity<?> changeCustomerStatus(@Valid @RequestBody UpdateCustomerStatusRequest customerRequest)
-			throws NoRecordsFoundException {
-		// customer should be able to login
-		Long customerId = customerRequest.getCustomerId();
-		if (customerService.existsByID(customerId)) {
-			Customer customer = customerService.getCustomerByID(customerId).get();
-			boolean permissonCus = false;
-
-			for (Role er : customer.getRoles()) {
-				if (er.getRoleName().equals(UserRoles.ROLE_CUSTOMER)) {
-					permissonCus = true;
-					break;
-				}
-			}
-
-			if (permissonCus) {
-				CustomerStatus status = customerRequest.getStatus();
-				customer.setStatus(status);
-				Customer c = customerService.updateCustomer(customer);
-
-				CustomerResponseFromStaff customerResponse = new CustomerResponseFromStaff();
-				customerResponse.setId(c.getCustomerID());
-				customerResponse.setFullname(c.getFullName());
-				customerResponse.setCustomerStatus(c.getStatus());
-				customerResponse.setCreateDate(c.getDateCreated());
-				customerResponse.setUsername(c.getUsername());
-				return ResponseEntity.status(200).body(customerResponse);
-			} else {
-				throw new RolePermissionsException("No permissions");
-			}
-		} else {
-			throw new NoDataFoundException("Customer status not changed");
-		}
-
-	}
-
-	// Role: Staff ,Get customer with the id
-	@GetMapping(value = "/customer/{customerID}")
-	@PreAuthorize("hasRole('STAFF')")
-	public ResponseEntity<?> getCustomerById(@Valid @PathVariable("customerID") Long id) {
-		Customer customer = customerService.getCustomerByID(id)
-				.orElseThrow(() -> new NoDataFoundException("Customer Not Found"));
-		CustomerResponseFromStaff customerResponse = new CustomerResponseFromStaff();
-		customerResponse.setId(customer.getCustomerID());
-		customerResponse.setFullname(customer.getFullName());
-		customerResponse.setCustomerStatus(customer.getStatus());
-		customerResponse.setCreateDate(customer.getDateCreated());
-		customerResponse.setUsername(customer.getUsername());
-		return ResponseEntity.status(200).body(customerResponse);
-	}
-
-	// To transfer the amount from one account to another account
-	@PutMapping(value = "/transfer")
-	@PreAuthorize("hasRole('STAFF')")
-	public ResponseEntity<?> doTransfer(@Valid @RequestBody TransferAmountRequest trans) throws NoRecordsFoundException {
-		// From/To Account Number valid
-		Long fromAccNumber = trans.getFromAccNumber();
-		Long toAccNumber = trans.getToAccNumber();
-		BigDecimal amount = trans.getAmount();
-		
-		Customer staffMember = customerService.getCustomerByUsername(trans.getByStaff()).orElseThrow(() ->{
-			return new NoRecordsFoundException("Staff member not found");
-		});
-
-		if (accountService.existsByAccountNumber(fromAccNumber) && accountService.existsByAccountNumber(toAccNumber)) {
-			System.out.println("start transfer money!!!!");
-			transactionService.transferMoney(fromAccNumber, toAccNumber, amount);
-			System.out.println("transfer money sucessful!!!");
-			Account fromAccount = accountService.findAccountByAccountNumber(fromAccNumber).get();
-			Transaction transaction1 = new Transaction();
-			transaction1.setAccount(fromAccount);
-			transaction1.setAmount(amount.negate());
-			transaction1.setDate(LocalDateTime.now());
-			transaction1.setReference(trans.getReason());
-			transaction1.setTransactionType(TransactionType.DEBIT);
-			transaction1.setInitiatedBy(staffMember);
-			Transaction transaction01 = transactionService.addTransaction(transaction1);
-
-			Account toAccount = accountService.findAccountByAccountNumber(toAccNumber).get();
-			Transaction transaction2 = new Transaction();
-			transaction2.setAccount(toAccount);
-			transaction2.setAmount(amount);
-			transaction2.setDate(LocalDateTime.now());
-			transaction2.setReference(trans.getReason());
-			transaction2.setTransactionType(TransactionType.DEBIT);
-			transaction2.setInitiatedBy(staffMember);
-			transactionService.addTransaction(transaction2);
-
-			StaffTransactionResponse transactionResponse = new StaffTransactionResponse();
-			transactionResponse.setAmount(amount);
-			transactionResponse.setFromAccNumber(fromAccNumber);
-			transactionResponse.setToAccNumber(toAccNumber);
-			transactionResponse.setReason(transaction01.getReference());
-			transactionResponse.setByStaff(trans.getByStaff());
-			return ResponseEntity.status(200).body(transactionResponse);
-		} else {
-			throw new NoDataFoundException("From/To Account Number Not Valid");
-		}
-
-	}
-
 	// 15
 	@PostMapping("/authenticate")
 	public ResponseEntity<?> signInUser(@Valid @RequestBody SignInRequest signInRequest) {
@@ -372,5 +266,112 @@ public class StaffController {
 		});
 
 		return ResponseEntity.status(200).body(responseBody);
+	}
+
+	// 22
+	// Enable or disable the customer, based on that the customer should be able to
+	// login
+	@PutMapping(value = "/customer")
+	@PreAuthorize("hasRole('STAFF')")
+	public ResponseEntity<?> changeCustomerStatus(@Valid @RequestBody UpdateCustomerStatusRequest customerRequest)
+			throws NoRecordsFoundException {
+		// customer should be able to login
+		Long customerId = customerRequest.getCustomerId();
+		if (customerService.existsByID(customerId)) {
+			Customer customer = customerService.getCustomerByID(customerId).get();
+			boolean permissonCus = false;
+
+			for (Role er : customer.getRoles()) {
+				if (er.getRoleName().equals(UserRoles.ROLE_CUSTOMER)) {
+					permissonCus = true;
+					break;
+				}
+			}
+
+			if (permissonCus) {
+				CustomerStatus status = customerRequest.getStatus();
+				customer.setStatus(status);
+				Customer c = customerService.updateCustomer(customer);
+
+				CustomerResponseFromStaff customerResponse = new CustomerResponseFromStaff();
+				customerResponse.setId(c.getCustomerID());
+				customerResponse.setFullname(c.getFullName());
+				customerResponse.setCustomerStatus(c.getStatus());
+				customerResponse.setCreateDate(c.getDateCreated());
+				customerResponse.setUsername(c.getUsername());
+				return ResponseEntity.status(200).body(customerResponse);
+			} else {
+				throw new RolePermissionsException("No permissions");
+			}
+		} else {
+			throw new NoDataFoundException("Customer status not changed");
+		}
+
+	}
+
+	// 23
+	// Role: Staff ,Get customer with the id
+	@GetMapping(value = "/customer/{customerID}")
+	@PreAuthorize("hasRole('STAFF')")
+	public ResponseEntity<?> getCustomerById(@Valid @PathVariable("customerID") Long id) {
+		Customer customer = customerService.getCustomerByID(id)
+				.orElseThrow(() -> new NoDataFoundException("Customer Not Found"));
+		CustomerResponseFromStaff customerResponse = new CustomerResponseFromStaff();
+		customerResponse.setId(customer.getCustomerID());
+		customerResponse.setFullname(customer.getFullName());
+		customerResponse.setCustomerStatus(customer.getStatus());
+		customerResponse.setCreateDate(customer.getDateCreated());
+		customerResponse.setUsername(customer.getUsername());
+		return ResponseEntity.status(200).body(customerResponse);
+	}
+
+	// 24
+	// To transfer the amount from one account to another account
+	@PutMapping(value = "/transfer")
+	@PreAuthorize("hasRole('STAFF')")
+	public ResponseEntity<?> doTransfer(@Valid @RequestBody TransferAmountRequest trans) throws NoRecordsFoundException {
+		// From/To Account Number valid
+		Long fromAccNumber = trans.getFromAccNumber();
+		Long toAccNumber = trans.getToAccNumber();
+		BigDecimal amount = trans.getAmount();
+		
+		Customer staffMember = customerService.getCustomerByUsername(trans.getByStaff()).orElseThrow(() ->{
+			return new NoRecordsFoundException("Staff member not found");
+		});
+
+		if (accountService.existsByAccountNumber(fromAccNumber) && accountService.existsByAccountNumber(toAccNumber)) {
+			System.out.println("start transfer money!!!!");
+			transactionService.transferMoney(fromAccNumber, toAccNumber, amount);
+			System.out.println("transfer money sucessful!!!");
+			Account fromAccount = accountService.findAccountByAccountNumber(fromAccNumber).get();
+			Transaction transaction1 = new Transaction();
+			transaction1.setAccount(fromAccount);
+			transaction1.setAmount(amount.negate());
+			transaction1.setDate(LocalDateTime.now());
+			transaction1.setReference(trans.getReason());
+			transaction1.setTransactionType(TransactionType.DEBIT);
+			transaction1.setInitiatedBy(staffMember);
+			Transaction transaction01 = transactionService.addTransaction(transaction1);
+
+			Account toAccount = accountService.findAccountByAccountNumber(toAccNumber).get();
+			Transaction transaction2 = new Transaction();
+			transaction2.setAccount(toAccount);
+			transaction2.setAmount(amount);
+			transaction2.setDate(LocalDateTime.now());
+			transaction2.setReference(trans.getReason());
+			transaction2.setTransactionType(TransactionType.DEBIT);
+			transaction2.setInitiatedBy(staffMember);
+			transactionService.addTransaction(transaction2);
+
+			StaffTransactionResponse transactionResponse = new StaffTransactionResponse();
+			transactionResponse.setAmount(amount);
+			transactionResponse.setFromAccNumber(fromAccNumber);
+			transactionResponse.setToAccNumber(toAccNumber);
+			transactionResponse.setReason(transaction01.getReference());
+			transactionResponse.setByStaff(trans.getByStaff());
+			return ResponseEntity.status(200).body(transactionResponse);
+		} else {
+			throw new NoDataFoundException("From/To Account Number Not Valid");
+		}
 	}
 }
