@@ -55,6 +55,7 @@ public class AccountServiceImpl implements AccountService {
 	public List<Account> findAccountsByCustomerCustomerID(Long id) {
 		// TODO Auto-generated method stub
 		return repo.findAccountsByCustomerCustomerID(id);
+	}
 
 	public Account addAccount(Account account) {
 		// TODO Auto-generated method stub

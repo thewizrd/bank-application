@@ -92,8 +92,8 @@ public class TestController {
 
 		Customer updated = customerRepo.save(admin);
 		return ResponseEntity.ok(new StaffGetCustomersResponse(updated));
-  }
-	
+	}
+
 	@PutMapping("/addStuff")
 	public ResponseEntity<?> addStuff() {
 		// Customer 1
@@ -164,7 +164,7 @@ public class TestController {
 		return ResponseEntity.ok(responseBody);
 	}
 
-  @GetMapping("/customers")
+	@GetMapping("/customers")
 	public ResponseEntity<?> getCustomers() {
 		List<Customer> customers = customerRepo.findAll();
 		return ResponseEntity.ok(customers.stream().map(c -> {
