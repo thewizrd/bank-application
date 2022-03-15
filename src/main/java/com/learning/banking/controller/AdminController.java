@@ -121,7 +121,7 @@ public class AdminController {
 
 			return ResponseEntity.ok(staffRespose);
 		} else {
-			throw new UserNameAlreadyExistsException("username already exits");
+			throw new UserNameAlreadyExistsException("Username: " + request.getUsername() + " already exits");
 		}
 	}
 

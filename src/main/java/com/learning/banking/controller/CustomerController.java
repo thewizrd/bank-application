@@ -45,6 +45,7 @@ import com.learning.banking.exceptions.IdNotFoundException;
 import com.learning.banking.exceptions.InsufficientFundsException;
 import com.learning.banking.exceptions.NoDataFoundException;
 import com.learning.banking.exceptions.NoRecordsFoundException;
+import com.learning.banking.exceptions.UserNameAlreadyExistsException;
 import com.learning.banking.payload.request.AddBeneficiaryRequest;
 import com.learning.banking.payload.request.ApproveAccountRequest;
 import com.learning.banking.payload.request.CreateAccountRequest;
@@ -105,35 +106,40 @@ public class CustomerController {
 	// 1
 	@PostMapping("/register")
 	public ResponseEntity<?> registerCustomer(@Valid @RequestBody CreateUserRequest registerUserRequest) {
-		Customer customer = new Customer();
-		customer.setFullName(registerUserRequest.getFirstName(), registerUserRequest.getLastName());
-		customer.setUsername(registerUserRequest.getUsername());
-		String password = passwordEncoder.encode(registerUserRequest.getPassword());
-		customer.setPassword(password);
+		if (!customerService.existsByUsername(registerUserRequest.getUsername())) {
+			Customer customer = new Customer();
+			customer.setFullName(registerUserRequest.getFirstName(), registerUserRequest.getLastName());
+			customer.setUsername(registerUserRequest.getUsername());
+			String password = passwordEncoder.encode(registerUserRequest.getPassword());
+			customer.setPassword(password);
+	
+			customer.setAadhar(registerUserRequest.getAadhar());
+			customer.setDateCreated(LocalDateTime.now());
+			customer.setFirstName(registerUserRequest.getFirstName());
+			customer.setLastName(registerUserRequest.getLastName());
+			customer.setPan(registerUserRequest.getPan());
+			customer.setPhone(registerUserRequest.getPhone());
+			customer.setSecretQuestion(registerUserRequest.getSecretQuestion());
+			customer.setSecretAnswer(registerUserRequest.getSecretAnswer());
+			customer.setStatus(CustomerStatus.ENABLED);
+	
+			// set role to customer
+			Role userRole = roleService.findByRoleName(UserRoles.ROLE_CUSTOMER)
+					.orElseThrow(() -> new IdNotFoundException("role id not found exception"));
+			customer.getRoles().add(userRole);
+		
+			Customer c = customerService.addCustomer(customer);
 
-		customer.setAadhar(registerUserRequest.getAadhar());
-		customer.setDateCreated(LocalDateTime.now());
-		customer.setFirstName(registerUserRequest.getFirstName());
-		customer.setLastName(registerUserRequest.getLastName());
-		customer.setPan(registerUserRequest.getPan());
-		customer.setPhone(registerUserRequest.getPhone());
-		customer.setSecretQuestion(registerUserRequest.getSecretQuestion());
-		customer.setSecretAnswer(registerUserRequest.getSecretAnswer());
-		customer.setStatus(CustomerStatus.ENABLED);
-
-		// set role to customer
-		Role userRole = roleService.findByRoleName(UserRoles.ROLE_CUSTOMER)
-				.orElseThrow(() -> new IdNotFoundException("role id not found exception"));
-		customer.getRoles().add(userRole);
-		Customer c = customerService.addCustomer(customer);
-
-		RegisterCustomerResponse cr = new RegisterCustomerResponse();
-		cr.setId(c.getCustomerID());
-		cr.setUsername(c.getUsername());
-		cr.setFirstName(c.getFirstName());
-		cr.setLastName(c.getLastName());
-		// cr.setPassword(c.getPassword());
-		return ResponseEntity.status(201).body(cr);
+			RegisterCustomerResponse cr = new RegisterCustomerResponse();
+			cr.setId(c.getCustomerID());
+			cr.setUsername(c.getUsername());
+			cr.setFirstName(c.getFirstName());
+			cr.setLastName(c.getLastName());
+			// cr.setPassword(c.getPassword());
+			return ResponseEntity.status(201).body(cr);
+		} else {
+			throw new UserNameAlreadyExistsException("Username: " + registerUserRequest.getUsername() + " already exists!");
+		}
 	}
 
 	// 2

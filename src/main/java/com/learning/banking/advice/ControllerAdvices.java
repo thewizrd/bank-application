@@ -46,7 +46,7 @@ public class ControllerAdvices extends ResponseEntityExceptionHandler {
 
 	@ExceptionHandler(UserNameAlreadyExistsException.class) // this is reponsible for handing NameAlreadyExistsException
 	public ResponseEntity<?> nameAlreadyExistsException(UserNameAlreadyExistsException e) {
-		ApiError apiError = new ApiError(HttpStatus.BAD_REQUEST, "username already exists", e);
+		ApiError apiError = new ApiError(HttpStatus.BAD_REQUEST, e.getMessage(), e);
 		return buildResponseEntity(apiError);
 	}
 
