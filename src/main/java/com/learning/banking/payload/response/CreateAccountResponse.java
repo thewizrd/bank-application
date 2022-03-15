@@ -3,6 +3,8 @@ package com.learning.banking.payload.response;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonFormat.Shape;
 import com.learning.banking.entity.Account;
 import com.learning.banking.enums.AccountType;
 
@@ -20,6 +22,7 @@ public class CreateAccountResponse {
 	private BigDecimal accountBalance;
 	private boolean approved;
 	private long accountNumber;
+	@JsonFormat(shape = Shape.STRING, pattern = "yyyy-MM-dd hh:mm:ss")
 	private LocalDateTime dateOfCreation;
 	private long customerID;
 	

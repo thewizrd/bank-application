@@ -18,8 +18,11 @@ public class RoleServiceImpl implements RoleService {
 
 	@Override
 	public Optional<Role> findByRoleName(UserRoles roleName) {
-		// TODO Auto-generated method stub
 		return roleRepository.findByRoleName(roleName);
 	}
 
+	@Override
+	public Role addRole(Role role) {
+		return roleRepository.save(role);
+	}
 }

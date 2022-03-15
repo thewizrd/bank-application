@@ -3,26 +3,25 @@ package com.learning.banking.payload.request;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
 
+import com.learning.banking.enums.CustomerStatus;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * StaffApproveBeneficiaryRequest
+ * UpdateCustomerStatusRequest
  *
  * @author bryan
- * @date Mar 6, 2022-7:08:44 PM
+ * @date Mar 14, 2022-12:55:35 PM
  */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class BeneficiaryRequest {
+public class UpdateCustomerStatusRequest {
 	@Positive
 	@NotNull
-	private Long fromCustomerAccNo;
-	@Positive
+	private Long customerId;
 	@NotNull
-	private Long beneficiaryAccNo;
-	//private LocalDate beneficiaryAddedDate;
-	private boolean approved = false;
+	private CustomerStatus status;
 }

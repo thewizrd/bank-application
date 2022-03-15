@@ -7,17 +7,29 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * ForgotSecurityRequest
+ * CreateStaffRequest
  *
  * @author bryan
- * @date Mar 6, 2022-6:34:43 PM
+ * @date Mar 14, 2022-9:43:28 AM
  */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ForgotSecurityRequest {
+public class CreateStaffRequest {
 	@NotBlank
 	private String username;
 	@NotBlank
-	private String securityAnswer;
+	private String firstName;
+	
+	@NotBlank
+	private String lastName;
+	@NotBlank
+	private String password;
+
+	/*
+	@NotBlank
+	private String secretQuestion;
+	@NotBlank
+	private String secretAnswer;
+	*/
 }

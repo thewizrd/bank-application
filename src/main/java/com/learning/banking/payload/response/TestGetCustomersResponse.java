@@ -1,5 +1,7 @@
 package com.learning.banking.payload.response;
 
+import java.time.LocalDate;
+
 import com.learning.banking.entity.Customer;
 import com.learning.banking.enums.CustomerStatus;
 
@@ -8,20 +10,24 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * StaffEnableCustomerResponse
+ * StaffGetCustomersResponse
  *
  * @author bryan
- * @date Mar 6, 2022-7:40:03 PM
+ * @date Mar 6, 2022-7:32:15 PM
  */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class StaffEnableCustomerResponse {
+public class TestGetCustomersResponse {
 	private long customerId;
+	private String customerName;
 	private CustomerStatus status;
+	private LocalDate created;
 	
-	public StaffEnableCustomerResponse(Customer customer) {
+	public TestGetCustomersResponse(Customer customer) {
 		this.customerId = customer.getCustomerID();
+		this.customerName = customer.getFullName();
 		this.status = customer.getStatus();
+		this.created = customer.getDateCreated().toLocalDate();
 	}
 }

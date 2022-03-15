@@ -2,26 +2,29 @@ package com.learning.banking.payload.response;
 
 import com.learning.banking.entity.Customer;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
- * CustomerRegistrationResponse
+ * CustomerResponse
  *
  * @author bryan
- * @date Mar 6, 2022-4:44:01 PM
+ * @date Mar 4, 2022-5:32:47 PM
  */
 @Data
-public class CustomerRegistrationResponse {
-	private long id;
+@AllArgsConstructor
+@NoArgsConstructor
+public class RegisterCustomerResponse {
+	private Long id;
+
 	private String username;
 	private String firstName;
 	private String lastName;
-	private String password;
 	
-	public CustomerRegistrationResponse(Customer customer) {
+	public RegisterCustomerResponse(Customer customer) {
 		this.id = customer.getCustomerID();
 		this.username = customer.getUsername();
-		this.password = customer.getPassword();
 		this.firstName = customer.getFirstName();
 		this.lastName = customer.getLastName();
 	}
