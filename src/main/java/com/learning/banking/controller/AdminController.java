@@ -115,6 +115,7 @@ public class AdminController {
 
 			StaffRespose staffRespose = new StaffRespose();
 			staffRespose.setStaffId(c.getCustomerID());
+			staffRespose.setStaffUserName(c.getUsername());
 			staffRespose.setStaffName(c.getFullName());
 			staffRespose.setStatus(c.getStatus());
 
@@ -137,6 +138,7 @@ public class AdminController {
 			for (Customer c : staffs) {
 				StaffRespose staffRespose = new StaffRespose();
 				staffRespose.setStaffId(c.getCustomerID());
+				staffRespose.setStaffUserName(c.getUsername());
 				staffRespose.setStaffName(c.getFullName());
 				staffRespose.setStatus(c.getStatus());
 				staffResposes.add(staffRespose);
@@ -168,6 +170,7 @@ public class AdminController {
 				Customer cust = customerService.updateCustomer(customer);
 				StaffRespose staffRespose = new StaffRespose();
 				staffRespose.setStaffId(cust.getCustomerID());
+				staffRespose.setStaffUserName(cust.getUsername());
 				staffRespose.setStatus(cust.getStatus());
 				staffRespose.setStaffName(cust.getFullName());
 				return ResponseEntity.ok(staffRespose);

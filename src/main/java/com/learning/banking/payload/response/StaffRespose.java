@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class StaffRespose {
 	private Long staffId;
+	private String staffUserName;
 	private String staffName;
 	private CustomerStatus status;
 }
