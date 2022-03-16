@@ -69,6 +69,8 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter {
 					.permitAll()
 				.antMatchers("/api/test/**")
 					.permitAll()
+					.antMatchers("/api/customer/*/forgot", "/api/customer/*/forgot/**")
+					.permitAll()
 				.anyRequest()
 					.authenticated()
 			.and()

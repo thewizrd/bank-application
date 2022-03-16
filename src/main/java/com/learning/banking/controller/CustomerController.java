@@ -480,7 +480,7 @@ public class CustomerController {
 	}
 
 	// 13
-	@PreAuthorize("hasRole('CUSTOMER')")
+	//@PreAuthorize("hasRole('CUSTOMER')")
 	@GetMapping("/{username}/forgot/question/answer")
 	public ResponseEntity<?> getCustomerSecurityQandA(@PathVariable String username) throws NoRecordsFoundException {
 		// Check if customer exists in database
@@ -493,7 +493,7 @@ public class CustomerController {
 	}
 
 	// 14
-	@PreAuthorize("hasRole('CUSTOMER')")
+	//@PreAuthorize("hasRole('CUSTOMER')")
 	@PutMapping("/{username}/forgot")
 	public ResponseEntity<?> updateForgottenPassword(@PathVariable String username,
 			@Valid @RequestBody ResetPasswordRequest request) throws NoRecordsFoundException {
