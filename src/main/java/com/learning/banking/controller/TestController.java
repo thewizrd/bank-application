@@ -111,7 +111,7 @@ public class TestController {
 
 		Account account1 = new Account();
 		account1.setAccountType(AccountType.CHECKING);
-		account1.setApproved(true);
+		account1.setApproved(false);
 		account1.setAccountBalance(new BigDecimal("100000.00"));
 		account1.setDateOfCreation(LocalDateTime.now());
 		account1.setAccountStatus(AccountStatus.ENABLED);
@@ -134,10 +134,10 @@ public class TestController {
 
 		Account account2 = new Account();
 		account2.setAccountType(AccountType.CHECKING);
-		account2.setApproved(true);
+		account2.setApproved(false);
 		account2.setAccountBalance(new BigDecimal("100000.00"));
 		account2.setDateOfCreation(LocalDateTime.now());
-		account2.setAccountStatus(AccountStatus.ENABLED);
+		account2.setAccountStatus(AccountStatus.DISABLED);
 		account2.setCustomer(customer2);
 
 		customer2.getAccounts().add(account2);
@@ -151,7 +151,7 @@ public class TestController {
 
 		Beneficiary benefit2 = new Beneficiary(account1, customer2);
 		benefit2.setAddedDate(LocalDate.now());
-		benefit2.setApproved(true);
+		benefit2.setApproved(false);
 		benefit2.setActive(BeneficiaryStatus.YES);
 		customer2.getBeneficiaries().add(benefit2);
 

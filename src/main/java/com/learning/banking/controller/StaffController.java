@@ -3,11 +3,15 @@ package com.learning.banking.controller;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import javax.validation.Valid;
@@ -41,12 +45,14 @@ import com.learning.banking.enums.UserRoles;
 import com.learning.banking.exceptions.NoDataFoundException;
 import com.learning.banking.exceptions.NoRecordsFoundException;
 import com.learning.banking.exceptions.RolePermissionsException;
+import com.learning.banking.exceptions.TransferException;
 import com.learning.banking.payload.request.ApproveBeneficiaryRequest;
 import com.learning.banking.payload.request.ApprovedAccountRequest;
 import com.learning.banking.payload.request.SignInRequest;
 import com.learning.banking.payload.request.TransferAmountRequest;
 import com.learning.banking.payload.request.UpdateCustomerStatusRequest;
 import com.learning.banking.payload.response.AccountLookupResponse;
+import com.learning.banking.payload.response.AllAccountsResponse;
 import com.learning.banking.payload.response.AllCustomersResponse;
 import com.learning.banking.payload.response.ApprovedAccountResponse;
 import com.learning.banking.payload.response.CustomerResponseFromStaff;
@@ -114,7 +120,17 @@ public class StaffController {
 		accountLookupResponse.setBalance(account.getAccountBalance());
 		accountLookupResponse.setFirstName(account.getCustomer().getFirstName());
 		accountLookupResponse.setLastName(account.getCustomer().getLastName());
-		Set<TransactionLookupResponse> transactions = new HashSet<TransactionLookupResponse>();
+		Set<TransactionLookupResponse> transactions = new LinkedHashSet<TransactionLookupResponse>();
+		Collections.sort(account.getTransactions(), new Comparator<Transaction>() {
+
+			@Override
+			public int compare(Transaction o1, Transaction o2) {
+				// TODO Auto-generated method stub
+				return o1.getDate().compareTo(o2.getDate());
+			}
+			
+		});
+		Collections.reverse(account.getTransactions());
 		account.getTransactions().forEach(e -> {
 			TransactionLookupResponse transaction = new TransactionLookupResponse();
 			transaction.setAmount(e.getAmount());
@@ -123,6 +139,7 @@ public class StaffController {
 			transaction.setTransactionType(e.getTransactionType().toString());
 			transactions.add(transaction);
 		});
+		
 		accountLookupResponse.setTransactions(transactions);
 
 		return ResponseEntity.status(200).body(accountLookupResponse);
@@ -336,42 +353,52 @@ public class StaffController {
 		Long fromAccNumber = trans.getFromAccNumber();
 		Long toAccNumber = trans.getToAccNumber();
 		BigDecimal amount = trans.getAmount();
+		StaffTransactionResponse transactionResponse = new StaffTransactionResponse();
 		
 		Customer staffMember = customerService.getCustomerByUsername(trans.getByStaff()).orElseThrow(() ->{
 			return new NoRecordsFoundException("Staff member not found");
 		});
 
 		if (accountService.existsByAccountNumber(fromAccNumber) && accountService.existsByAccountNumber(toAccNumber)) {
-			System.out.println("start transfer money!!!!");
-			transactionService.transferMoney(fromAccNumber, toAccNumber, amount);
-			System.out.println("transfer money sucessful!!!");
-			Account fromAccount = accountService.findAccountByAccountNumber(fromAccNumber).get();
-			Transaction transaction1 = new Transaction();
-			transaction1.setAccount(fromAccount);
-			transaction1.setAmount(amount.negate());
-			transaction1.setDate(LocalDateTime.now());
-			transaction1.setReference(trans.getReason());
-			transaction1.setTransactionType(TransactionType.DEBIT);
-			transaction1.setInitiatedBy(staffMember);
-			Transaction transaction01 = transactionService.addTransaction(transaction1);
+			Account fromAcc = accountService.getAccountByAccountNumber(fromAccNumber).get();
+			Account toAcc = accountService.getAccountByAccountNumber(toAccNumber).get();
+			if(fromAcc.isApproved() && toAcc.isApproved())
+			{
+				System.out.println("start transfer money!!!!");
+				transactionService.transferMoney(fromAccNumber, toAccNumber, amount);
+				System.out.println("transfer money sucessful!!!");
+				Account fromAccount = accountService.findAccountByAccountNumber(fromAccNumber).get();
+				Transaction transaction1 = new Transaction();
+				transaction1.setAccount(fromAccount);
+				transaction1.setAmount(amount.negate());
+				transaction1.setDate(LocalDateTime.now());
+				transaction1.setReference(trans.getReason());
+				transaction1.setTransactionType(TransactionType.DEBIT);
+				transaction1.setInitiatedBy(staffMember);
+				Transaction transaction01 = transactionService.addTransaction(transaction1);
 
-			Account toAccount = accountService.findAccountByAccountNumber(toAccNumber).get();
-			Transaction transaction2 = new Transaction();
-			transaction2.setAccount(toAccount);
-			transaction2.setAmount(amount);
-			transaction2.setDate(LocalDateTime.now());
-			transaction2.setReference(trans.getReason());
-			transaction2.setTransactionType(TransactionType.DEBIT);
-			transaction2.setInitiatedBy(staffMember);
-			transactionService.addTransaction(transaction2);
+				Account toAccount = accountService.findAccountByAccountNumber(toAccNumber).get();
+				Transaction transaction2 = new Transaction();
+				transaction2.setAccount(toAccount);
+				transaction2.setAmount(amount);
+				transaction2.setDate(LocalDateTime.now());
+				transaction2.setReference(trans.getReason());
+				transaction2.setTransactionType(TransactionType.DEBIT);
+				transaction2.setInitiatedBy(staffMember);
+				transactionService.addTransaction(transaction2);
 
-			StaffTransactionResponse transactionResponse = new StaffTransactionResponse();
-			transactionResponse.setAmount(amount);
-			transactionResponse.setFromAccNumber(fromAccNumber);
-			transactionResponse.setToAccNumber(toAccNumber);
-			transactionResponse.setReason(transaction01.getReference());
-			transactionResponse.setByStaff(trans.getByStaff());
+				
+				transactionResponse.setAmount(amount);
+				transactionResponse.setFromAccNumber(fromAccNumber);
+				transactionResponse.setToAccNumber(toAccNumber);
+				transactionResponse.setReason(transaction01.getReference());
+				transactionResponse.setByStaff(trans.getByStaff());
+			}
+			else {
+				throw new TransferException("Both accounts must be approved to perform a transfer.");
+			}
 			return ResponseEntity.status(200).body(transactionResponse);
+			
 		} else {
 			throw new NoDataFoundException("From/To Account Number Not Valid");
 		}

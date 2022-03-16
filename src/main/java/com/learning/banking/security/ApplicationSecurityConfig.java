@@ -61,6 +61,8 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter {
 				.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 			.and()
 			.authorizeRequests()
+				.antMatchers("/api/customer/*/forgot", "/api/customer/*/forgot/**")
+					.permitAll()
 				.antMatchers("/api/customer/register", "/api/customer/authenticate")
 					.permitAll()
 				.antMatchers("/api/admin/authenticate")
