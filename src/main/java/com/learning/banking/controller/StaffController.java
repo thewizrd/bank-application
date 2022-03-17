@@ -134,7 +134,7 @@ public class StaffController {
 		account.getTransactions().forEach(e -> {
 			TransactionLookupResponse transaction = new TransactionLookupResponse();
 			transaction.setAmount(e.getAmount());
-			transaction.setDate(e.getDate().toLocalDate());
+			transaction.setDate(e.getDate());
 			transaction.setReference(e.getReference());
 			transaction.setTransactionType(e.getTransactionType().toString());
 			transactions.add(transaction);

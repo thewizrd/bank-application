@@ -40,7 +40,9 @@ public class AccountDetailsResponse {
 		this.accountStatus = account.getAccountStatus();
 		
 		if (account.getTransactions() != null) {
-			transaction = account.getTransactions().stream().map(t -> {
+			transaction = account.getTransactions().stream().sorted((o1, o2) -> {
+				return o2.getDate().compareTo(o1.getDate());
+			}).map(t -> {
 				return new TransactionsResponse(t);
 			}).collect(Collectors.toList());
 		} else {
