@@ -6,12 +6,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import javax.validation.Valid;
@@ -38,6 +36,7 @@ import com.learning.banking.entity.Beneficiary;
 import com.learning.banking.entity.Customer;
 import com.learning.banking.entity.Role;
 import com.learning.banking.entity.Transaction;
+import com.learning.banking.enums.AccountStatus;
 import com.learning.banking.enums.BeneficiaryStatus;
 import com.learning.banking.enums.CustomerStatus;
 import com.learning.banking.enums.TransactionType;
@@ -52,7 +51,6 @@ import com.learning.banking.payload.request.SignInRequest;
 import com.learning.banking.payload.request.TransferAmountRequest;
 import com.learning.banking.payload.request.UpdateCustomerStatusRequest;
 import com.learning.banking.payload.response.AccountLookupResponse;
-import com.learning.banking.payload.response.AllAccountsResponse;
 import com.learning.banking.payload.response.AllCustomersResponse;
 import com.learning.banking.payload.response.ApprovedAccountResponse;
 import com.learning.banking.payload.response.CustomerResponseFromStaff;
@@ -134,7 +132,7 @@ public class StaffController {
 		account.getTransactions().forEach(e -> {
 			TransactionLookupResponse transaction = new TransactionLookupResponse();
 			transaction.setAmount(e.getAmount());
-			transaction.setDate(e.getDate().toLocalDate());
+			transaction.setDate(e.getDate());
 			transaction.setReference(e.getReference());
 			transaction.setTransactionType(e.getTransactionType().toString());
 			transactions.add(transaction);
@@ -234,6 +232,7 @@ public class StaffController {
 				return new NoDataFoundException("Account not found.");
 			});
 			
+			customerAccount.setAccountStatus(AccountStatus.ENABLED);
 			customerAccount.setApproved(true);
 			customerAccount.setApprovedBy(staffMember);
 			customerAccount = accountService.updateAccount(customerAccount);
