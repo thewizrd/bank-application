@@ -322,28 +322,36 @@ public class CustomerController {
 							"Beneficiary with account number: " + request.getAccountNumber() + " not found");
 				});
 
-		Beneficiary beneficiary = new Beneficiary(beneficiaryAccount, customer);
-		beneficiary.setAddedDate(LocalDate.now());
-		beneficiary.setApproved(false);
-		beneficiary.setActive(BeneficiaryStatus.YES);
-
-		// Add beneficiary to collection from customer object (to establish
-		// relationship)
-		customer.getBeneficiaries().add(beneficiary);
-
-		// Update customer
-		Customer updatedCustomer = customerService.updateCustomer(customer);
-
-		// Retrieve added beneficiary
-		Beneficiary addedBeneficiary = updatedCustomer.getBeneficiaries().stream().filter(b -> {
+		boolean accAlreadyAdded = customer.getBeneficiaries().stream().anyMatch(b -> {
 			return b.getAccount().getAccountNumber() == request.getAccountNumber();
-		}).findFirst().orElseThrow(() -> {
-			return new NoRecordsFoundException(
-					"Beneficiary with account number: " + request.getAccountNumber() + " not found");
 		});
+		
+		if (accAlreadyAdded) {
+			throw new IllegalArgumentException("Beneficiary with account number: " + request.getAccountNumber() + " already added");
+		} else {
+			Beneficiary beneficiary = new Beneficiary(beneficiaryAccount, customer);
+			beneficiary.setAddedDate(LocalDate.now());
+			beneficiary.setApproved(false);
+			beneficiary.setActive(BeneficiaryStatus.YES);
 
-		// Return response
-		return ResponseEntity.status(HttpStatus.CREATED).body(new AddBeneficiaryResponse(addedBeneficiary));
+			// Add beneficiary to collection from customer object (to establish
+			// relationship)
+			customer.getBeneficiaries().add(beneficiary);
+
+			// Update customer
+			Customer updatedCustomer = customerService.updateCustomer(customer);
+
+			// Retrieve added beneficiary
+			Beneficiary addedBeneficiary = updatedCustomer.getBeneficiaries().stream().filter(b -> {
+				return b.getAccount().getAccountNumber() == request.getAccountNumber();
+			}).findFirst().orElseThrow(() -> {
+				return new NoRecordsFoundException(
+						"Beneficiary with account number: " + request.getAccountNumber() + " not found");
+			});
+
+			// Return response
+			return ResponseEntity.status(HttpStatus.CREATED).body(new AddBeneficiaryResponse(addedBeneficiary));
+		}
 	}
 
 	// 10
