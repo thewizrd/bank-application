@@ -372,7 +372,7 @@ public class StaffController {
 				transaction1.setAmount(amount.negate());
 				transaction1.setDate(LocalDateTime.now());
 				transaction1.setReference(trans.getReason());
-				transaction1.setTransactionType(TransactionType.DEBIT);
+				transaction1.setTransactionType(trans.getTransactionType());
 				transaction1.setInitiatedBy(staffMember);
 				Transaction transaction01 = transactionService.addTransaction(transaction1);
 
@@ -382,7 +382,7 @@ public class StaffController {
 				transaction2.setAmount(amount);
 				transaction2.setDate(LocalDateTime.now());
 				transaction2.setReference(trans.getReason());
-				transaction2.setTransactionType(TransactionType.DEBIT);
+				transaction2.setTransactionType(trans.getTransactionType());
 				transaction2.setInitiatedBy(staffMember);
 				transactionService.addTransaction(transaction2);
 
