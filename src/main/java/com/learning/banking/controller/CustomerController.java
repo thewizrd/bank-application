@@ -45,6 +45,7 @@ import com.learning.banking.exceptions.IdNotFoundException;
 import com.learning.banking.exceptions.InsufficientFundsException;
 import com.learning.banking.exceptions.NoDataFoundException;
 import com.learning.banking.exceptions.NoRecordsFoundException;
+import com.learning.banking.exceptions.TransferException;
 import com.learning.banking.exceptions.UserNameAlreadyExistsException;
 import com.learning.banking.payload.request.AddBeneficiaryRequest;
 import com.learning.banking.payload.request.ApproveAccountRequest;
@@ -429,54 +430,59 @@ public class CustomerController {
 			return new NoRecordsFoundException("Customer with ID: " + request.getBy() + " not found");
 		});
 
-		// 3. Validate funds
-		if (fromAccount.getAccountBalance().subtract(request.getAmount()).compareTo(BigDecimal.ZERO) < 0) {
-			// Amount is negative after subtraction; account has insufficient funds
-			throw new InsufficientFundsException(
-					String.format("Account number: %d does not have sufficient funds to process transfer",
-							request.getFromAccNumber()));
+		// Check if accounts are approved
+		if (fromAccount.isApproved() && toAccount.isApproved()) {
+			// 3. Validate funds
+			if (fromAccount.getAccountBalance().subtract(request.getAmount()).compareTo(BigDecimal.ZERO) < 0) {
+				// Amount is negative after subtraction; account has insufficient funds
+				throw new InsufficientFundsException(
+						String.format("Account number: %d does not have sufficient funds to process transfer",
+								request.getFromAccNumber()));
+			} else {
+				// 4. Deduct amount
+				fromAccount.setAccountBalance(fromAccount.getAccountBalance().subtract(request.getAmount()));
+				// 4a. Add amount
+				toAccount.setAccountBalance(toAccount.getAccountBalance().add(request.getAmount()));
+			}
+
+			final LocalDateTime now = LocalDateTime.now();
+
+			// 5. Create Transaction objects
+			Transaction fromTransaction = new Transaction();
+			fromTransaction.setDate(now);
+			fromTransaction.setReference(request.getReason());
+			fromTransaction.setAmount(request.getAmount().negate());
+			fromTransaction.setTransactionType(TransactionType.DEBIT); // TODO: add to request?
+			fromTransaction.setInitiatedBy(initiatedBy);
+			fromTransaction.setAccount(fromAccount);
+			// 5a. Add to list
+			fromAccount.getTransactions().add(fromTransaction);
+
+			Transaction toTransaction = new Transaction();
+			toTransaction.setDate(now);
+			toTransaction.setReference(request.getReason());
+			toTransaction.setAmount(request.getAmount());
+			toTransaction.setTransactionType(TransactionType.DEBIT); // TODO: add to request?
+			toTransaction.setInitiatedBy(initiatedBy);
+			toTransaction.setAccount(toAccount);
+			// 5a. Add to list
+			toAccount.getTransactions().add(toTransaction);
+
+			// 6. Save entities
+			accountService.updateAccounts(Arrays.asList(fromAccount, toAccount));
+
+			// 7. Return payload
+			TransferResponse response = new TransferResponse();
+			response.setFromAccNumber(request.getFromAccNumber());
+			response.setToAccNumber(request.getToAccNumber());
+			response.setAmount(request.getAmount());
+			response.setReason(request.getReason());
+			response.setBy(request.getBy());
+
+			return ResponseEntity.ok(response);
 		} else {
-			// 4. Deduct amount
-			fromAccount.setAccountBalance(fromAccount.getAccountBalance().subtract(request.getAmount()));
-			// 4a. Add amount
-			toAccount.setAccountBalance(toAccount.getAccountBalance().add(request.getAmount()));
+			throw new TransferException("Both accounts must be approved to perform a transfer.");
 		}
-
-		final LocalDateTime now = LocalDateTime.now();
-
-		// 5. Create Transaction objects
-		Transaction fromTransaction = new Transaction();
-		fromTransaction.setDate(now);
-		fromTransaction.setReference(request.getReason());
-		fromTransaction.setAmount(request.getAmount().negate());
-		fromTransaction.setTransactionType(TransactionType.DEBIT); // TODO: add to request?
-		fromTransaction.setInitiatedBy(initiatedBy);
-		fromTransaction.setAccount(fromAccount);
-		// 5a. Add to list
-		fromAccount.getTransactions().add(fromTransaction);
-
-		Transaction toTransaction = new Transaction();
-		toTransaction.setDate(now);
-		toTransaction.setReference(request.getReason());
-		toTransaction.setAmount(request.getAmount());
-		toTransaction.setTransactionType(TransactionType.DEBIT); // TODO: add to request?
-		toTransaction.setInitiatedBy(initiatedBy);
-		toTransaction.setAccount(toAccount);
-		// 5a. Add to list
-		toAccount.getTransactions().add(toTransaction);
-
-		// 6. Save entities
-		accountService.updateAccounts(Arrays.asList(fromAccount, toAccount));
-
-		// 7. Return payload
-		TransferResponse response = new TransferResponse();
-		response.setFromAccNumber(request.getFromAccNumber());
-		response.setToAccNumber(request.getToAccNumber());
-		response.setAmount(request.getAmount());
-		response.setReason(request.getReason());
-		response.setBy(request.getBy());
-
-		return ResponseEntity.ok(response);
 	}
 
 	// 13
