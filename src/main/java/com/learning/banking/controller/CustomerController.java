@@ -460,7 +460,7 @@ public class CustomerController {
 			fromTransaction.setDate(now);
 			fromTransaction.setReference(request.getReason());
 			fromTransaction.setAmount(request.getAmount().negate());
-			fromTransaction.setTransactionType(TransactionType.DEBIT); // TODO: add to request?
+			fromTransaction.setTransactionType(request.getTransactionType());
 			fromTransaction.setInitiatedBy(initiatedBy);
 			fromTransaction.setAccount(fromAccount);
 			// 5a. Add to list
@@ -470,7 +470,7 @@ public class CustomerController {
 			toTransaction.setDate(now);
 			toTransaction.setReference(request.getReason());
 			toTransaction.setAmount(request.getAmount());
-			toTransaction.setTransactionType(TransactionType.DEBIT); // TODO: add to request?
+			toTransaction.setTransactionType(request.getTransactionType());
 			toTransaction.setInitiatedBy(initiatedBy);
 			toTransaction.setAccount(toAccount);
 			// 5a. Add to list
